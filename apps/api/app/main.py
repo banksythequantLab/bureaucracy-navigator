@@ -16,7 +16,10 @@ from __future__ import annotations
 import os
 from typing import Any, Literal
 
+from pathlib import Path
+
 from fastapi import FastAPI, HTTPException, Response
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 from packages.agents import interview as iv
@@ -26,7 +29,13 @@ from packages.rules.checks import Finding, run_checks
 from packages.rules.snapshot import RuleSnapshot, build_snapshot
 from packages.schemas.loader import available_forms, load_schema
 
-app = FastAPI(title="Bureaucracy Navigator", version="0.1.0")
+app = FastAPI(title="Bureaucracy Navigator", version="0.3.0")
+WEB_INDEX = Path(__file__).resolve().parents[2] / "web" / "index.html"
+
+
+@app.get("/", include_in_schema=False)
+def index() -> FileResponse:
+    return FileResponse(WEB_INDEX)
 
 DISCLAIMER_EN = "This tool explains and checks forms. It is not legal advice."
 DISCLAIMER_ES = "Esta herramienta explica y revisa formularios. No es asesoría legal."

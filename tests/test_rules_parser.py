@@ -60,3 +60,11 @@ def test_missing_returns_empty():
     assert parse_edition_dates("nothing here") is None
     assert parse_fee_row("nothing here", "I-765 Application for Employment Authorization") == {}
     assert parse_biometrics("no such note") is None
+
+
+def test_known_snapshots_present_for_all_forms():
+    from packages.rules.snapshot import FORM_PAGES, known_snapshot
+
+    for form in FORM_PAGES:
+        k = known_snapshot(form)
+        assert k is not None and k.stale is True and k.fee_paper.value and k.edition_dates.value, form

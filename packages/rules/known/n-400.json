@@ -1,0 +1,39 @@
+{
+  "form": "n-400",
+  "fetched_at": "2026-09-16T23:55:58.507551+00:00",
+  "edition_dates": {
+    "value": "01/20/25",
+    "source_url": "https://www.uscis.gov/n-400",
+    "excerpt": "Edition Date\n\n01/20/25. You can find the edition date at the bottom of the page on the form and instructions.\n\nDates are listed in mm/dd/yy format.\n\nIf you complete and print this form to mail it, make sure that the form edition date and page numbers are visible at the bottom of all pages and that a"
+  },
+  "edition_alert": {
+    "value": null,
+    "source_url": null,
+    "excerpt": null
+  },
+  "fee_schedule_edition": "09/09/26",
+  "fee_table_excerpt": "N-400 Application for Naturalization (uscis.gov/n-400) General filing, unless noted below. Fee determined based on how form is submitted. You cannot file online if you are requesting a fee waiver or a reduced fee; you must file a paper Form N-400.\nPaper Filing: $760 Online Filing: $710 If your documented annual household income is not more than 400 percent of the Federal Poverty Guidelines and you submit supporting documentation with your application.\nPaper Filing: $380 If you meet the requirements of INA sections 328 or 329 with respect to your military service.\n$0 Certain applicants may be eligible for a Fee Waiver. See Form I-912 Instructions (uscis.gov/i-912) $0 ",
+  "fee_paper": {
+    "value": "$760",
+    "source_url": "https://www.uscis.gov/sites/default/files/document/forms/g-1055.pdf",
+    "excerpt": "N-400 Application for Naturalization (uscis.gov/n-400) General filing, unless noted below. Fee determined based on how form is submitted. You cannot file online if you are requesting a fee waiver or a reduced fee; you must file a paper Form N-400.\nPaper Filing: $760 Online Filing: $710 If your docum"
+  },
+  "fee_online": {
+    "value": "$710",
+    "source_url": "https://www.uscis.gov/sites/default/files/document/forms/g-1055.pdf",
+    "excerpt": "N-400 Application for Naturalization (uscis.gov/n-400) General filing, unless noted below. Fee determined based on how form is submitted. You cannot file online if you are requesting a fee waiver or a reduced fee; you must file a paper Form N-400.\nPaper Filing: $760 Online Filing: $710 If your docum"
+  },
+  "biometrics_note": {
+    "value": null,
+    "source_url": null,
+    "excerpt": null
+  },
+  "where_to_file_url": "https://www.uscis.gov/forms/all-forms/direct-filing-addresses-for-form-n-400-application-for-naturalization",
+  "processing_time_url": "https://egov.uscis.gov/processing-times/",
+  "raw_sources": [
+    "https://www.uscis.gov/n-400",
+    "https://www.uscis.gov/sites/default/files/document/forms/g-1055.pdf"
+  ],
+  "warnings": [],
+  "stale": false
+}

@@ -1,0 +1,40 @@
+{
+  "form": "i-130",
+  "fetched_at": "2026-09-16T23:15:00+00:00",
+  "edition_dates": {
+    "value": "04/01/24",
+    "source_url": "packages/forms/pdf/i-130.pdf (footer)",
+    "excerpt": "Form I-130 Edition 04/01/24 — from the downloaded PDF footer; uscis.gov page not reached (Tavily keyless limit)"
+  },
+  "edition_alert": {
+    "value": null,
+    "source_url": null,
+    "excerpt": null
+  },
+  "fee_schedule_edition": "09/09/26",
+  "fee_table_excerpt": "I-130 Petition for Alien Relative — General filing: Paper $675 / Online $625 (G-1055 ed. 09/09/26)",
+  "fee_paper": {
+    "value": "$675",
+    "source_url": "https://www.uscis.gov/sites/default/files/document/forms/g-1055.pdf",
+    "excerpt": "I-130 Petition for Alien Relative (uscis.gov/i-130) General filing Paper Filing: $675 Online Filing: $625"
+  },
+  "fee_online": {
+    "value": "$625",
+    "source_url": "https://www.uscis.gov/sites/default/files/document/forms/g-1055.pdf",
+    "excerpt": "Paper Filing: $675 Online Filing: $625"
+  },
+  "biometrics_note": {
+    "value": null,
+    "source_url": null,
+    "excerpt": null
+  },
+  "where_to_file_url": "https://www.uscis.gov/i-130-addresses",
+  "processing_time_url": "https://egov.uscis.gov/processing-times/",
+  "raw_sources": [
+    "https://www.uscis.gov/sites/default/files/document/forms/g-1055.pdf"
+  ],
+  "warnings": [
+    "Edition date taken from the downloaded PDF footer, not verified against uscis.gov; where-to-file URL unverified."
+  ],
+  "stale": false
+}

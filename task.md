@@ -20,15 +20,26 @@ _Nebius x NVIDIA Global AI Hackathon · deadline Oct 30 2026 10:00 PDT · Notion
 - [x] E2E (offline model, live Tavily): 35 Qs in Spanish → findings deny×1 (typed signature), reject×1 (PL 119-21 fee combined), info×1 (09/15/26 edition alert) → 519 KB filled PDF
 - [x] 19/19 tests
 
+## Done 2026-09-16 late — Week 3 (ahead of schedule)
+- [x] N-400 + I-130 official PDFs downloaded on Vesper (ed. 01/20/25 and 04/01/24); AcroForm dumps + tooltips committed
+- [x] packages/schemas/n-400.yaml — 40 questions: eligibility basis, identity, residence, trips, GMC core (false claim, voting, taxes, nonresident filing, Selective Service), contact, fee options; risks for 90-day early filing, 6-month/1-year trips, physical presence, reduced-fee-online, N-648
+- [x] packages/forms/maps/n_400.py — Part 1/2/4/8/9/11 fields incl. A-Number on every page, trip rows (row-1 box is misnamed P9_Line1_Countries1), leading-space state quirk; 5 signature widgets in NEVER_FILL
+- [x] N-400 fill verified visually (pages 1 and 6)
+- [x] `int` field type (interview parser + checks)
+- [x] known snapshots: n-400 (live, verified) and i-130 (fees from G-1055; edition from PDF footer, flagged unverified)
+- [x] apps/web/index.html — bilingual single-file UI: live rule card w/ sources + live/stale badge, one-question interview with type-aware inputs, ¿Por qué? panel with cites, findings by severity, PDF download; Playwright-driven E2E in Spanish (3 findings)
+- [x] 24/24 tests
+
 ## Blockers
 - [ ] NEBIUS_API_KEY not yet created → phrase/parse/explain fall back to labels (works, just not conversational)
 - [ ] TAVILY_API_KEY — keyless monthly limit was hit during dev; live snapshots intermittent until a key is set
 - [ ] Confirm Nemotron 3 Nano model ID in Token Factory console
 - [ ] Devpost rules: one team, two entries?
 
-## Next (Week 3)
-- [ ] With keys: run the Spanish interview with Nemotron phrasing; tune prompts; cache explanations
-- [ ] N-400 schema + PDF map (download PDF on Vesper, inspect, map) ; I-130 after
-- [ ] Live RuleSnapshot for I-130 / N-400 (`python -m packages.rules.snapshot n-400 --save-known`)
-- [ ] Next.js UI (EN/ES) over the interview API
+## Next (Week 4)
+- [ ] Spanish `why_es` / `text_es` for every field + risk (Nemotron batch translate once NEBIUS_API_KEY exists, then human review)
+- [ ] I-130 schema + map (PDF + fields dump already in repo)
+- [ ] Verify I-130 edition live once TAVILY_API_KEY exists (`python -m packages.rules.snapshot i-130 --save-known`)
+- [ ] Nemotron adjudicator pass (fuzzy findings on top of deterministic ones) + processing-time predictor
+- [ ] Deploy demo (Vercel/VPS) and start the 3-min video script
 - [ ] Re-run inspector when the 09/15/26 I-765 edition posts; diff field names

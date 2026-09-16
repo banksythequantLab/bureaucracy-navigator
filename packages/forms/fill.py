@@ -14,7 +14,7 @@ from pypdf import PdfReader, PdfWriter
 
 from packages.schemas.loader import load_schema
 
-MAPS = {"i-765": "packages.forms.maps.i_765"}
+MAPS = {"i-765": "packages.forms.maps.i_765", "n-400": "packages.forms.maps.n_400"}
 
 
 def field_values(form: str, answers: dict[str, Any]) -> dict[str, str]:

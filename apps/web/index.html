@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bureaucracy Navigator</title>
+<style>
+  :root { --bg:#f6f7f9; --card:#fff; --ink:#1b1f24; --muted:#5b6470; --line:#e3e6ea; --accent:#1f5fbf;
+          --deny:#b3261e; --reject:#c2410c; --rfe:#a16207; --info:#1d4ed8; --ok:#15803d; }
+  * { box-sizing:border-box }
+  body { margin:0; font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif; color:var(--ink); background:var(--bg) }
+  header { background:#0f2a5c; color:#fff; padding:14px 20px; display:flex; align-items:center; gap:16px; flex-wrap:wrap }
+  header h1 { font-size:18px; margin:0; font-weight:600 }
+  header .sp { flex:1 }
+  header select, header button { font:inherit; padding:6px 10px; border-radius:6px; border:1px solid #6b86b8; background:#173a78; color:#fff }
+  main { max-width:920px; margin:0 auto; padding:20px 16px 60px; display:grid; gap:16px }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px 18px }
+  .card h2 { margin:0 0 8px; font-size:15px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted) }
+  .rule { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px }
+  .rule .k { font-size:12px; color:var(--muted) } .rule .v { font-size:18px; font-weight:600 }
+  .rule a { font-size:12px; color:var(--accent) }
+  .badge { display:inline-block; padding:2px 8px; border-radius:999px; font-size:12px; font-weight:600 }
+  .badge.live { background:#dcfce7; color:var(--ok) } .badge.stale { background:#fef3c7; color:var(--rfe) }
+  .section { font-size:13px; color:var(--muted); margin-bottom:4px }
+  .q { font-size:20px; font-weight:600; margin:0 0 12px }
+  .opts { display:flex; flex-wrap:wrap; gap:8px }
+  .opts button, .row button, .actions button { font:inherit; padding:9px 14px; border-radius:8px; border:1px solid var(--line); background:#fff; cursor:pointer }
+  .opts button:hover, .actions .primary { border-color:var(--accent); background:var(--accent); color:#fff }
+  input, textarea { font:inherit; padding:8px 10px; border:1px solid var(--line); border-radius:8px; width:100% }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:8px; margin-bottom:8px }
+  .actions { display:flex; gap:8px; margin-top:12px; align-items:center; flex-wrap:wrap }
+  .actions .skip { color:var(--muted) }
+  details { margin-top:12px; border-top:1px dashed var(--line); padding-top:10px }
+  summary { cursor:pointer; color:var(--accent); font-weight:600 }
+  .cite { font-size:12px; color:var(--muted) }
+  progress { width:100%; height:8px; accent-color:var(--accent) }
+  .find { border-left:4px solid var(--line); padding:8px 12px; margin:8px 0; background:#fafafa; border-radius:0 8px 8px 0 }
+  .find.deny { border-color:var(--deny) } .find.reject { border-color:var(--reject) } .find.rfe { border-color:var(--rfe) } .find.info { border-color:var(--info) }
+  .find .sev { font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase }
+  .find.deny .sev { color:var(--deny) } .find.reject .sev { color:var(--reject) } .find.rfe .sev { color:var(--rfe) } .find.info .sev { color:var(--info) }
+  .disc { font-size:12px; color:var(--muted); text-align:center }
+  .hidden { display:none }
+  .counts span { margin-right:12px; font-weight:600 }
+</style>
+</head>
+<body>
+<header>
+  <h1 id="t-title">Bureaucracy Navigator</h1>
+  <span class="sp"></span>
+  <select id="form"><option value="i-765">I-765 · Work permit / Permiso de trabajo</option><option value="n-400">N-400 · Naturalization / Naturalización</option></select>
+  <select id="lang"><option value="en">English</option><option value="es">Español</option></select>
+  <button id="start"></button>
+</header>
+<main>
+  <section class="card" id="rulecard">
+    <h2 id="t-rules"></h2>
+    <div class="rule" id="rule"></div>
+  </section>
+
+  <section class="card hidden" id="qcard">
+    <progress id="prog" value="0" max="1"></progress>
+    <div class="section" id="qsection"></div>
+    <p class="q" id="qtext"></p>
+    <div id="qinput"></div>
+    <div class="actions">
+      <button class="primary" id="submit"></button>
+      <button class="skip" id="skip"></button>
+    </div>
+    <details id="why"><summary id="t-why"></summary><p id="whytext"></p><div class="cite" id="cites"></div></details>
+  </section>
+
+  <section class="card hidden" id="donecard">
+    <h2 id="t-check"></h2>
+    <div class="counts" id="counts"></div>
+    <div id="findings"></div>
+    <div class="actions">
+      <button class="primary" id="download"></button>
+      <button id="recheck"></button>
+    </div>
+    <p class="disc" id="disc"></p>
+  </section>
+  <p class="disc" id="foot"></p>
+</main>
+
+<script>
+const T = {
+  en: { start:"Start interview", rules:"Verified today from uscis.gov", edition:"Accepted edition(s)", alert:"New edition announced", paper:"Fee · paper", online:"Fee · online",
+        addresses:"Where to file", live:"live", stale:"last verified", submit:"Next", skip:"Skip (optional)", why:"Why does this field exist?", check:"Rejection simulator",
+        download:"Download filled PDF", recheck:"Re-run checks", yes:"Yes", no:"No", add:"+ add another", family:"Family name", given:"Given name", middle:"Middle name",
+        street:"Street number and name", unit_type:"Apt / Ste / Flr", unit:"Unit #", city:"City", state:"State (2 letters)", zip:"ZIP", in_care_of:"In care of (optional)", country:"Country",
+        number:"Passport number", expires:"Expires (YYYY-MM-DD)", left:"Date left (YYYY-MM-DD)", returned:"Date returned", countries:"Countries", items:"One per line",
+        sev:{deny:"Denial risk", reject:"Rejected at intake", rfe:"Likely RFE", info:"Heads-up"}, clean:"No findings — packet looks clean on the deterministic checks.",
+        foot:"This tool explains and checks forms. It is not legal advice. Open source · Nebius Token Factory + NVIDIA Nemotron + Tavily." },
+  es: { start:"Comenzar entrevista", rules:"Verificado hoy en uscis.gov", edition:"Edición(es) aceptada(s)", alert:"Nueva edición anunciada", paper:"Tarifa · papel", online:"Tarifa · en línea",
+        addresses:"Dónde presentar", live:"en vivo", stale:"última verificación", submit:"Siguiente", skip:"Omitir (opcional)", why:"¿Por qué existe este campo?", check:"Simulador de rechazo",
+        download:"Descargar PDF completado", recheck:"Volver a revisar", yes:"Sí", no:"No", add:"+ agregar otro", family:"Apellido", given:"Nombre", middle:"Segundo nombre",
+        street:"Número y calle", unit_type:"Apt / Ste / Flr", unit:"N.º de unidad", city:"Ciudad", state:"Estado (2 letras)", zip:"Código postal", in_care_of:"A cargo de (opcional)", country:"País",
+        number:"Número de pasaporte", expires:"Vence (AAAA-MM-DD)", left:"Fecha de salida (AAAA-MM-DD)", returned:"Fecha de regreso", countries:"Países", items:"Uno por línea",
+        sev:{deny:"Riesgo de denegación", reject:"Rechazo al recibirlo", rfe:"Probable RFE", info:"Aviso"}, clean:"Sin hallazgos — el paquete pasa las verificaciones deterministas.",
+        foot:"Esta herramienta explica y revisa formularios. No es asesoría legal. Código abierto · Nebius Token Factory + NVIDIA Nemotron + Tavily." }
+};
+const $ = id => document.getElementById(id);
+let lang = "en", sid = null, state = null;
+const t = k => T[lang][k];
+
+function applyLang() {
+  lang = $("lang").value;
+  $("start").textContent = t("start"); $("t-rules").textContent = t("rules"); $("submit").textContent = t("submit");
+  $("skip").textContent = t("skip"); $("t-why").textContent = t("why"); $("t-check").textContent = t("check");
+  $("download").textContent = t("download"); $("recheck").textContent = t("recheck"); $("foot").textContent = t("foot");
+}
+
+async function api(path, opts) {
+  const r = await fetch(path, Object.assign({ headers: { "content-type": "application/json" } }, opts || {}));
+  if (!r.ok) throw new Error((await r.json()).detail || r.statusText);
+  return r.json();
+}
+
+async function loadRules() {
+  $("rule").innerHTML = "…";
+  try {
+    const s = await api(`/rules/${$("form").value}`);
+    const badge = s.stale ? `<span class="badge stale">${t("stale")} ${s.fetched_at.slice(0,10)}</span>` : `<span class="badge live">${t("live")} · ${s.fetched_at.slice(0,10)}</span>`;
+    const cell = (k, v, url) => `<div><div class="k">${k}</div><div class="v">${v ?? "—"}</div>${url ? `<a href="${url}" target="_blank" rel="noopener">source</a>` : ""}</div>`;
+    $("rule").innerHTML = cell(t("edition"), s.edition_dates.value, s.edition_dates.source_url)
+      + (s.edition_alert.value ? cell(t("alert"), s.edition_alert.value, s.edition_alert.source_url) : "")
+      + cell(t("paper"), s.fee_paper.value, s.fee_paper.source_url) + cell(t("online"), s.fee_online.value, s.fee_online.source_url)
+      + `<div><div class="k">${t("addresses")}</div><div class="v"><a href="${s.where_to_file_url}" target="_blank" rel="noopener">uscis.gov ↗</a></div></div>`
+      + `<div><div class="k">G-1055</div><div class="v">${s.fee_schedule_edition ?? "—"}</div>${badge}</div>`
+      + (s.warnings.length ? `<div class="cite">${s.warnings.join(" · ")}</div>` : "");
+  } catch (e) { $("rule").textContent = e.message; }
+}
+
+function render() {
+  const q = state.question;
+  $("prog").value = state.progress.answered; $("prog").max = state.progress.total;
+  if (state.done) { $("qcard").classList.add("hidden"); return runCheck(); }
+  $("qcard").classList.remove("hidden"); $("donecard").classList.add("hidden");
+  $("qsection").textContent = q.section; $("qtext").textContent = q.text;
+  $("whytext").textContent = q.why || ""; $("cites").textContent = (q.cite || []).join(" · ");
+  $("skip").classList.toggle("hidden", q.required);
+  const box = $("qinput"); box.innerHTML = "";
+  const field = (name, key, ph) => `<label><span class="cite">${t(key) || key}</span><input name="${name}" placeholder="${ph || ""}"></label>`;
+  if (q.type === "bool") {
+    box.innerHTML = `<div class="opts"><button data-v="true">${t("yes")}</button><button data-v="false">${t("no")}</button></div>`;
+    box.querySelectorAll("button").forEach(b => b.onclick = () => submit(b.dataset.v === "true"));
+    $("submit").classList.add("hidden");
+  } else if (q.type === "choice") {
+    box.innerHTML = `<div class="opts">${q.options.map(o => `<button data-v="${o}">${o.replace(/_/g," ")}</button>`).join("")}</div>`;
+    box.querySelectorAll("button").forEach(b => b.onclick = () => submit(b.dataset.v));
+    $("submit").classList.add("hidden");
+  } else {
+    $("submit").classList.remove("hidden");
+    if (q.type === "name") box.innerHTML = `<div class="grid">${field("family","family")}${field("given","given")}${field("middle","middle")}</div>`;
+    else if (q.type === "address") box.innerHTML = `<div class="grid">${field("in_care_of","in_care_of")}${field("street","street")}${field("unit_type","unit_type","apt")}${field("unit","unit")}${field("city","city")}${field("state","state","NY")}${field("zip","zip")}${field("country","country","USA")}</div>`;
+    else if (q.type === "place") box.innerHTML = `<div class="grid">${field("city","city")}${field("state","state")}${field("country","country")}</div>`;
+    else if (q.type === "passport") box.innerHTML = `<div class="grid">${field("number","number")}${field("country","country")}${field("expires","expires")}</div>`;
+    else if (q.type === "list") box.innerHTML = `<div id="rows"></div><button type="button" id="addrow">${t("add")}</button>`, addRow(q), $("addrow").onclick = () => addRow(q);
+    else box.innerHTML = `<input id="single" placeholder="${q.type === "date" ? "YYYY-MM-DD" : q.type === "category" ? "(c)(8)" : ""}">`;
+    const first = box.querySelector("input"); if (first) first.focus();
+  }
+}
+
+function addRow(q) {
+  const rows = $("rows"); const d = document.createElement("div"); d.className = "grid";
+  const f = (n, k) => `<label><span class="cite">${t(k)}</span><input name="${n}"></label>`;
+  if (q.field_id === "trips" ) d.innerHTML = f("left","left") + f("returned","returned") + f("countries","countries");
+  else if (["other_names"].includes(q.field_id)) d.innerHTML = f("family","family") + f("given","given") + f("middle","middle");
+  else d.innerHTML = `<label><span class="cite">${t("items")}</span><input name="item"></label>`;
+  rows.appendChild(d);
+}
+
+function collect() {
+  const q = state.question, box = $("qinput");
+  if (q.type === "list") {
+    const out = [];
+    box.querySelectorAll("#rows .grid").forEach(r => {
+      const o = {}; r.querySelectorAll("input").forEach(i => { if (i.value.trim()) o[i.name] = i.value.trim(); });
+      if (Object.keys(o).length) out.push("item" in o ? o.item : o);
+    });
+    return out;
+  }
+  if (["name","address","place","passport"].includes(q.type)) {
+    const o = {}; box.querySelectorAll("input").forEach(i => o[i.name] = i.value.trim()); return o;
+  }
+  return $("single").value.trim();
+}
+
+async function submit(value) {
+  const v = value === undefined ? collect() : value;
+  try { state = await api(`/interview/${sid}/answer`, { method: "POST", body: JSON.stringify({ field_id: state.question.field_id, value: v }) }); render(); }
+  catch (e) { alert(e.message); }
+}
+
+async function runCheck() {
+  $("donecard").classList.remove("hidden"); $("findings").innerHTML = "…";
+  const c = await api(`/interview/${sid}/check`, { method: "POST" });
+  const sev = T[lang].sev;
+  $("counts").innerHTML = Object.entries(c.counts).map(([k, n]) => `<span class="${k}">${sev[k] || k}: ${n}</span>`).join("")
+    + (c.snapshot_stale ? ` <span class="badge stale">${t("stale")} ${(c.snapshot_fetched_at||"").slice(0,10)}</span>` : "");
+  $("findings").innerHTML = c.findings.length ? c.findings.map(f => `<div class="find ${f.severity}"><div class="sev">${sev[f.severity] || f.severity}${f.field ? " · " + f.field : ""}</div><div>${lang === "es" && f.text_es ? f.text_es : f.text_en}</div><div class="cite">${(f.cite || []).join(" · ")}</div></div>`).join("")
+    : `<div class="find info">${t("clean")}</div>`;
+  $("disc").textContent = c.disclaimer;
+}
+
+$("lang").onchange = () => { applyLang(); loadRules(); if (state) render(); };
+$("form").onchange = loadRules;
+$("start").onclick = async () => { state = await api("/interview/start", { method: "POST", body: JSON.stringify({ form: $("form").value, lang }) }); sid = state.session_id; render(); };
+$("submit").onclick = () => submit();
+$("skip").onclick = async () => { state = await api(`/interview/${sid}/answer`, { method: "POST", body: JSON.stringify({ field_id: state.question.field_id, skip: true }) }); render(); };
+$("download").onclick = () => window.open(`/interview/${sid}/fill`, "_blank");
+$("recheck").onclick = runCheck;
+document.addEventListener("keydown", e => { if (e.key === "Enter" && !$("qcard").classList.contains("hidden") && !$("submit").classList.contains("hidden")) submit(); });
+applyLang(); loadRules();
+</script>
+</body>
+</html>

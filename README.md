@@ -7,7 +7,7 @@ Built on **Nebius Token Factory** (NVIDIA **Nemotron 3**) with **Tavily** keepin
 
 **Not legal advice.** This tool explains and checks forms; it does not give legal advice or predict eligibility. / *No es asesoría legal.*
 
-## What it does (v1 scope: I-130, I-765, N-400 · EN/ES)
+## What it does (v1 scope: I-130, I-765, N-400 · EN/ES) — I-765 and N-400 fill today; I-130 next
 
 1. **Live rule check** — Tavily extracts today's edition date, fee (paper vs online), biometrics rule, and filing address; nothing is hardcoded.
 2. **Interview** — Nemotron asks one plain-language question at a time and branches (e.g., I-765 category decides fee, biometrics, address).
@@ -26,6 +26,7 @@ pip install -r requirements.txt
 Copy-Item .env.example .env   # then paste NEBIUS_API_KEY (and TAVILY_API_KEY)
 pytest -q                     # offline tests, no keys needed
 uvicorn apps.api.app.main:app --reload
+# open http://127.0.0.1:8000/  ← bilingual web UI (rule card → interview → rejection simulator → PDF)
 ```
 
 Then:
@@ -48,6 +49,7 @@ The filler never writes the signature field: the official PDF says it "can not b
 ## Layout
 
 ```
+apps/web/index.html       single-file EN/ES UI served at /
 apps/api/app/main.py      FastAPI: /health /forms /rules /explain /interview/* (start, answer, check, fill)
 packages/schemas/*.yaml   field → statute → risk, EN/ES, required_when branching  (CC-BY-4.0 open dataset)
 packages/rules/snapshot   Tavily RuleSnapshot: uscis.gov form page + G-1055 PDF → edition, fee, addresses; 24h cache;
@@ -56,7 +58,7 @@ packages/rules/checks     deterministic adjudicator core: schema risks, required
 packages/agents/nebius    Nebius/Nemotron client (reasoning + fast tiers, structured output)
 packages/agents/interview deterministic question order; Nemotron phrases questions + parses free text (optional)
 packages/forms/           official USCIS PDFs, AcroForm inspector, answers→field maps, pypdf filler
-tests/                    19 offline tests incl. real-PDF fill + read-back and a seeded bad packet
+tests/                    24 offline tests incl. real-PDF fill + read-back and a seeded bad packet
 ```
 
 ## Roadmap
@@ -65,7 +67,7 @@ tests/                    19 offline tests incl. real-PDF fill + read-back and a
 |---|---|
 | 1 | Scaffold, Nebius client, Tavily RuleSnapshot, I-765 schema (EN) ✅ |
 | 2 | Interview agent on I-765; pypdf fill of the official PDF; deterministic adjudicator core ✅ |
-| 3 | Explainer + citations; Spanish for I-765; N-400 schema |
+| 3 | N-400 schema + PDF fill; web UI (EN/ES); known-snapshot fallback for all 3 forms ✅ — Spanish why/finding text + Nemotron phrasing pending keys |
 | 4 | Adjudicator agent + deterministic checks; I-130 schema + fill |
 | 5 | Processing-time predictor; Deadline Sentinel |
 | 6 | Polish, 3-minute video, hosted demo, Devpost submission |

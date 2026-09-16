@@ -162,6 +162,9 @@ def parse(field: FieldDef, raw: Any, lang: Lang) -> Any:
         if m:
             base = f"({m.group(1).lower()})({m.group(2)})"
             return base + (f"({m.group(4)})" if m.group(4) else "")
+    if field.type == "int":
+        m = re.search(r"-?\d+", t.replace(",", ""))
+        return int(m.group(0)) if m else t
     if field.type in ("text",):
         return t
     # Composite or ambiguous → ask the model if we can, else return raw text

@@ -1,0 +1,409 @@
+# Form N-400, Application for Naturalization — field schema (v1: printed Parts 1, 2, 4, 8, 9-core, 11 + filing; tooltip part numbers differ from the printed form)
+# Mapped against PDF edition 01/20/25 (`python -m packages.forms.inspect packages/forms/pdf/n-400.pdf`, 488 fields).
+# Printed Parts 3 (biographic), 5 (marital), 6 (children), 7 (employment), 9 items 5-15 (full GMC questionnaire), 10 (fee reduction) → v2.
+form: n-400
+title_en: Application for Naturalization
+title_es: Solicitud de Naturalización
+official_url: https://www.uscis.gov/n-400
+pdf: packages/forms/pdf/n-400.pdf
+pdf_edition: "01/20/25"
+license: CC-BY-4.0
+
+sections:
+  - id: part1_eligibility
+    title_en: "Part 1. Information About Your Eligibility"
+    title_es: "Parte 1. Información sobre su elegibilidad"
+    fields:
+      - id: basis
+        type: choice
+        options: [general_5yr, spouse_3yr, vawa, spouse_abroad, military_wartime, military_1yr, other]
+        label_en: "On what basis are you applying? (select only one)"
+        label_es: "¿Con qué fundamento solicita? (seleccione solo uno)"
+        why_en: >
+          The basis sets the continuous-residence and physical-presence math USCIS
+          applies (5 years vs 3 years as spouse of a citizen, or none for wartime
+          military). Selecting more than one box, or the wrong one, delays or rejects the N-400.
+        cite: ["INA 316(a)", "INA 319(a)", "INA 328-329"]
+        risks:
+          - id: spouse_basis_not_married
+            severity: rfe
+            when: "basis == 'spouse_3yr' and married_to_usc_3_years == False"
+            text_en: "The 3-year route requires living in marital union with the same U.S.-citizen spouse for all 3 years; otherwise use the 5-year general provision."
+      - id: a_number
+        type: text
+        pattern: "^A?\\d{8,9}$"
+        label_en: "Alien Registration Number (A-Number, 9 digits, on your green card)"
+        label_es: "Número de Registro de Extranjero (A-Number, 9 dígitos, en su tarjeta verde)"
+        why_en: "Every page of the N-400 carries your A-Number; it is how USCIS pulls your permanent-resident file."
+        cite: ["8 CFR 103.2(b)(1)"]
+      - id: married_to_usc_3_years
+        type: bool
+        required_when: "basis == 'spouse_3yr'"
+        label_en: "Have you been married to and living with the same U.S. citizen for the last 3 years, and has your spouse been a citizen that whole time?"
+        label_es: "¿Ha estado casado/a y viviendo con el mismo ciudadano estadounidense durante los últimos 3 años, y su cónyuge ha sido ciudadano todo ese tiempo?"
+        why_en: "All three conditions are required for INA 319(a); USCIS checks the spouse's naturalization date against the marriage date."
+        cite: ["INA 319(a)", "8 CFR 319.1"]
+
+  - id: part2_identity
+    title_en: "Part 2. Information About You"
+    title_es: "Parte 2. Información sobre usted"
+    fields:
+      - id: full_name
+        type: name
+        label_en: "Your current legal name (no nicknames)"
+        label_es: "Su nombre legal actual (sin apodos)"
+        why_en: "Printed on the Certificate of Naturalization exactly as written here; fixing it later requires a new N-565 and fee."
+        cite: ["USCIS Form N-400 Instructions, Part 2 Item 1"]
+      - id: other_names
+        type: list
+        item_type: name
+        max_items: 2
+        required: false
+        label_en: "Other names you have used since birth"
+        label_es: "Otros nombres que ha usado desde su nacimiento"
+        why_en: "FBI name checks run on every name; an omitted maiden name or alias is a common cause of a continued interview."
+        cite: ["INA 335(a)", "8 CFR 335.1"]
+      - id: name_change
+        type: bool
+        label_en: "Do you want to legally change your name when you naturalize?"
+        label_es: "¿Desea cambiar legalmente su nombre al naturalizarse?"
+        why_en: "A name change is only possible at a judicial oath ceremony, which can add months of wait in some districts."
+        cite: ["INA 336(e)", "8 CFR 338.5"]
+      - id: new_name
+        type: name
+        required_when: "name_change == True"
+        label_en: "The new legal name you want"
+        label_es: "El nuevo nombre legal que desea"
+        why_en: "Goes on the certificate and the court order; spell it exactly."
+        cite: ["8 CFR 338.5"]
+      - id: uscis_online_account
+        type: text
+        required: false
+        label_en: "USCIS Online Account Number, if any"
+        label_es: "Número de cuenta en línea de USCIS, si tiene"
+        why_en: "Links the paper filing to your online account for status updates."
+        cite: ["USCIS Form N-400 Instructions, Part 2 Item 6"]
+      - id: sex
+        type: choice
+        options: [male, female]
+        label_en: "Sex"
+        label_es: "Sexo"
+        why_en: "Recorded on the certificate."
+        cite: ["USCIS Form N-400 Instructions, Part 2 Item 7"]
+      - id: dob
+        type: date
+        label_en: "Date of birth"
+        label_es: "Fecha de nacimiento"
+        why_en: "Must match your green card and birth certificate; a mismatch triggers an RFE for the underlying record."
+        cite: ["8 CFR 103.2(a)(2)"]
+      - id: lpr_date
+        type: date
+        label_en: "Date you became a lawful permanent resident (the 'Resident Since' date on your green card)"
+        label_es: "Fecha en que se convirtió en residente permanente (la fecha 'Resident Since' en su tarjeta verde)"
+        why_en: >
+          Every eligibility clock starts here. You may file up to 90 days before
+          reaching 5 years (or 3 under the spouse route); filing earlier is denied,
+          not rejected, and the fee is lost.
+        cite: ["INA 334(a)", "8 CFR 334.2(b)"]
+        risks:
+          - id: filed_too_early
+            severity: deny
+            when: "days_as_lpr is not None and ((basis == 'spouse_3yr' and days_as_lpr < 1095 - 90) or (basis == 'general_5yr' and days_as_lpr < 1826 - 90))"
+            text_en: "You are more than 90 days short of the required residence period. An early N-400 is denied and the fee is not refunded — wait until the 90-day window."
+      - id: country_of_birth
+        type: text
+        label_en: "Country of birth"
+        label_es: "País de nacimiento"
+        why_en: "Identity match across USCIS, State Department and FBI systems."
+        cite: ["USCIS Form N-400 Instructions, Part 2 Item 10"]
+      - id: nationality
+        type: text
+        label_en: "Country of citizenship or nationality"
+        label_es: "País de ciudadanía o nacionalidad"
+        why_en: "Some countries do not permit dual nationality; USCIS records it for the oath's renunciation clause."
+        cite: ["INA 337(a)"]
+      - id: disability_accommodation
+        type: bool
+        label_en: "Do you have a physical or developmental disability or mental impairment that prevents you from taking the English or civics tests?"
+        label_es: "¿Tiene una discapacidad física o del desarrollo, o un impedimento mental, que le impida tomar los exámenes de inglés o de educación cívica?"
+        why_en: "If yes, Form N-648 from a licensed doctor must be filed with the N-400; without it the tests are required."
+        cite: ["INA 312(b)", "8 CFR 312.2(b)"]
+        risks:
+          - id: n648_missing
+            severity: rfe
+            when: "disability_accommodation == True and n648_attached == False"
+            text_en: "You requested a medical exception but no Form N-648 is attached; USCIS will issue an RFE or require the tests."
+      - id: ssn_apply
+        type: bool
+        label_en: "Do you want the SSA to issue or update your Social Security card after you naturalize?"
+        label_es: "¿Desea que la SSA emita o actualice su tarjeta de Seguro Social después de naturalizarse?"
+        why_en: "Saves an SSA office visit; requires the disclosure consent in Item 12.C."
+        cite: ["USCIS Form N-400 Instructions, Part 2 Item 12"]
+      - id: ssn
+        type: text
+        pattern: "^\\d{9}$"
+        required: false
+        label_en: "Social Security Number, if any"
+        label_es: "Número de Seguro Social, si tiene"
+        why_en: "Used to update SSA records to citizen status."
+        cite: ["USCIS Form N-400 Instructions, Part 2 Item 12.B"]
+
+  - id: part3_residence
+    title_en: "Part 4. Information About Your Residence"
+    title_es: "Parte 4. Información sobre su residencia"
+    fields:
+      - id: physical_address
+        type: address
+        label_en: "Current physical address (where you live)"
+        label_es: "Dirección física actual (donde vive)"
+        why_en: "Determines the USCIS field office that will interview you; you must have lived in that state/district for 3 months before filing."
+        cite: ["INA 316(a)", "8 CFR 316.2(a)(5)"]
+      - id: physical_address_since
+        type: date
+        label_en: "Since what date have you lived at this address?"
+        label_es: "¿Desde qué fecha vive en esta dirección?"
+        why_en: "USCIS requires 3 months' residence in the state or district before filing."
+        cite: ["8 CFR 316.2(a)(5)"]
+        risks:
+          - id: district_3_months
+            severity: rfe
+            when: "days_at_current_address is not None and days_at_current_address < 90 and moved_within_same_district == False"
+            text_en: "You moved to this state/district less than 3 months ago; file after the 3-month mark or USCIS may deny for lack of jurisdictional residence."
+      - id: mailing_same_as_physical
+        type: bool
+        label_en: "Is your mailing address the same as your physical address?"
+        label_es: "¿Su dirección postal es la misma que su dirección física?"
+        why_en: "Interview notices and the oath letter go to the mailing address; a missed notice can close the case."
+        cite: ["8 CFR 103.2(b)(19)"]
+      - id: mailing_address
+        type: address
+        required_when: "mailing_same_as_physical == False"
+        label_en: "Mailing address"
+        label_es: "Dirección postal"
+        why_en: "Where every notice will be sent."
+        cite: ["8 CFR 103.2(b)(19)"]
+
+  - id: part6_trips
+    title_en: "Part 8. Time Outside the United States"
+    title_es: "Parte 8. Tiempo fuera de los Estados Unidos"
+    fields:
+      - id: trips
+        type: list
+        item_type: trip
+        max_items: 6
+        required: false
+        label_en: "Every trip outside the U.S. in the last 5 years (date left, date returned, countries) — most recent first"
+        label_es: "Cada viaje fuera de EE. UU. en los últimos 5 años (fecha de salida, fecha de regreso, países) — el más reciente primero"
+        why_en: >
+          Two separate clocks: a single trip of 6 months or more presumes a break
+          in continuous residence; total time outside must be less than half the
+          statutory period (30 of 60 months, or 18 of 36 under the spouse route).
+        cite: ["INA 316(b)", "8 CFR 316.5(c)(1)", "INA 316(a)(1)"]
+        risks:
+          - id: trip_over_6_months
+            severity: rfe
+            when: "longest_trip_days is not None and 180 <= longest_trip_days < 365"
+            text_en: "A trip of 6–12 months presumes you broke continuous residence; be ready to rebut it with tax returns, a lease, a job, and family ties kept in the U.S."
+          - id: trip_over_1_year
+            severity: deny
+            when: "longest_trip_days is not None and longest_trip_days >= 365"
+            text_en: "A trip of a year or more breaks continuous residence outright (unless an N-470 was approved); the residence clock restarts from your return."
+          - id: physical_presence_short
+            severity: deny
+            when: "total_days_outside is not None and ((basis == 'spouse_3yr' and total_days_outside > 548) or (basis != 'spouse_3yr' and total_days_outside > 913))"
+            text_en: "Total days outside the U.S. exceed half of the statutory period, so the physical-presence requirement is not met yet."
+      - id: total_days_outside
+        type: int
+        label_en: "Total days outside the U.S. in the last 5 years (3 years if applying as a spouse)"
+        label_es: "Total de días fuera de EE. UU. en los últimos 5 años (3 años si solicita como cónyuge)"
+        why_en: "USCIS adds up every trip; the total must be under half of the period."
+        cite: ["INA 316(a)(1)"]
+      - id: longest_trip_days
+        type: int
+        label_en: "Length in days of your longest single trip"
+        label_es: "Duración en días de su viaje más largo"
+        why_en: "Six months or more on a single trip triggers a continuous-residence presumption."
+        cite: ["INA 316(b)", "8 CFR 316.5(c)(1)"]
+
+  - id: part9_core
+    title_en: "Part 9. Additional Information (core good-moral-character items)"
+    title_es: "Parte 9. Información adicional (preguntas básicas de buen carácter moral)"
+    fields:
+      - id: claimed_citizen
+        type: bool
+        label_en: "Have you EVER claimed to be a U.S. citizen (in writing or any other way)?"
+        label_es: "¿Alguna vez ha afirmado ser ciudadano estadounidense (por escrito o de otra forma)?"
+        why_en: "A false claim to citizenship after 1996 is a permanent bar; answer carefully and get advice before filing if yes."
+        cite: ["INA 212(a)(6)(C)(ii)", "INA 101(f)"]
+        risks:
+          - id: false_claim
+            severity: deny
+            when: "claimed_citizen == True"
+            text_en: "A yes here is a potential permanent bar to naturalization and can trigger removal; consult an attorney before filing."
+      - id: voted
+        type: bool
+        label_en: "Have you EVER registered to vote or voted in any U.S. federal, state, or local election?"
+        label_es: "¿Alguna vez se ha registrado para votar o ha votado en alguna elección federal, estatal o local de EE. UU.?"
+        why_en: "Unlawful voting is a removability ground and a good-moral-character issue; USCIS cross-checks voter rolls."
+        cite: ["INA 237(a)(6)", "18 U.S.C. 611"]
+        risks:
+          - id: unlawful_voting
+            severity: deny
+            when: "voted == True"
+            text_en: "Voting or registering as a non-citizen is a removability ground; consult an attorney before filing."
+      - id: overdue_taxes
+        type: bool
+        label_en: "Do you currently owe any overdue federal, state, or local taxes?"
+        label_es: "¿Debe actualmente impuestos federales, estatales o locales atrasados?"
+        why_en: "Overdue taxes are not an automatic bar, but USCIS expects a signed IRS payment plan and proof of payments."
+        cite: ["USCIS Policy Manual Vol. 12, Pt. F, Ch. 5"]
+        risks:
+          - id: taxes_no_plan
+            severity: rfe
+            when: "overdue_taxes == True and tax_payment_plan == False"
+            text_en: "Bring an IRS/state installment agreement and payment history to the interview or expect a continuance."
+      - id: tax_payment_plan
+        type: bool
+        required_when: "overdue_taxes == True"
+        label_en: "Do you have a signed payment plan with the IRS or state and are you current on it?"
+        label_es: "¿Tiene un plan de pago firmado con el IRS o el estado y está al día?"
+        why_en: "The plan plus proof of payments is what officers accept in place of full payment."
+        cite: ["USCIS Policy Manual Vol. 12, Pt. F, Ch. 5"]
+      - id: nonresident_tax
+        type: bool
+        label_en: "Since becoming a permanent resident, have you ever called yourself a 'non-U.S. resident' on a tax return or failed to file because you considered yourself a nonresident?"
+        label_es: "Desde que es residente permanente, ¿alguna vez se declaró 'no residente de EE. UU.' en una declaración de impuestos o no la presentó por considerarse no residente?"
+        why_en: "Filing as a nonresident is treated as evidence you abandoned U.S. residence."
+        cite: ["8 CFR 316.5(c)(2)"]
+        risks:
+          - id: nonresident_filing
+            severity: deny
+            when: "nonresident_tax == True"
+            text_en: "Filing as a nonresident alien raises a presumption of abandoned residence; get advice before filing."
+      - id: selective_service
+        type: choice
+        options: [registered, not_required, not_registered]
+        label_en: "If you are male and lived in the U.S. between ages 18 and 26: did you register with Selective Service?"
+        label_es: "Si es hombre y vivió en EE. UU. entre los 18 y 26 años: ¿se inscribió en el Servicio Selectivo?"
+        why_en: "Failure to register between 18 and 26 can show lack of good moral character unless it was not knowing and willful; a status letter from SSS is needed."
+        cite: ["INA 316(e)... see 50 U.S.C. 3802", "USCIS Policy Manual Vol. 12, Pt. D, Ch. 7"]
+        risks:
+          - id: sss_not_registered
+            severity: rfe
+            when: "selective_service == 'not_registered'"
+            text_en: "Obtain a Selective Service status information letter and a statement explaining why you did not register; officers ask for both."
+
+  - id: part10_contact
+    title_en: "Part 11. Applicant's Contact Information, Certification, and Signature"
+    title_es: "Parte 11. Información de contacto, certificación y firma del solicitante"
+    fields:
+      - id: daytime_phone
+        type: text
+        label_en: "Daytime telephone number"
+        label_es: "Número de teléfono diurno"
+        why_en: "Used for interview scheduling changes."
+        cite: ["USCIS Form N-400 Instructions, Part 10"]
+      - id: mobile_phone
+        type: text
+        required: false
+        label_en: "Mobile number, if any"
+        label_es: "Número de celular, si tiene"
+        why_en: "Text alerts require Form G-1145."
+        cite: ["USCIS Form G-1145"]
+      - id: email
+        type: text
+        required: false
+        label_en: "Email address, if any"
+        label_es: "Correo electrónico, si tiene"
+        why_en: "Account and notice alerts."
+        cite: ["USCIS Form N-400 Instructions, Part 10"]
+      - id: signature_type
+        type: choice
+        options: [wet_ink, typed, stamped, software_generated, none]
+        label_en: "How will you sign the form?"
+        label_es: "¿Cómo firmará el formulario?"
+        why_en: "The N-400 has three signature lines (Part 11, and Parts 15–16 at the interview). Part 11 must be signed in ink before mailing; the others are signed in front of the officer."
+        cite: ["DHS Interim Final Rule, Fed. Reg. (May 11, 2026)", "8 CFR 103.2(a)(2)"]
+        risks:
+          - id: invalid_signature
+            severity: deny
+            when: "signature_type in ['typed','stamped','software_generated']"
+            text_en: "Only a handwritten ink signature is accepted; typed/stamped/e-signatures risk denial and fee forfeiture."
+          - id: unsigned
+            severity: reject
+            when: "signature_type == 'none'"
+            text_en: "Unsigned forms are rejected at intake."
+
+  - id: filing
+    title_en: "Before You File — Fee and Packet"
+    title_es: "Antes de presentar — Tarifa y paquete"
+    fields:
+      - id: filing_online
+        type: bool
+        label_en: "Will you file online (myUSCIS)?"
+        label_es: "¿Presentará en línea (myUSCIS)?"
+        why_en: "Online is $50 cheaper, but reduced-fee and fee-waiver requests must be filed on paper."
+        cite: ["Form G-1055"]
+      - id: fee_option
+        type: choice
+        options: [standard, reduced_fee, fee_waiver, military_exempt]
+        label_en: "Which fee option applies to you?"
+        label_es: "¿Qué opción de tarifa le corresponde?"
+        why_en: "Standard $760 paper / $710 online; reduced $380 if household income ≤ 400% of the poverty guidelines (paper only, with proof); fee waiver via I-912; $0 for INA 328/329 military applicants."
+        cite: ["Form G-1055", "8 CFR 106.3"]
+        risks:
+          - id: reduced_fee_online
+            severity: reject
+            when: "fee_option in ['reduced_fee','fee_waiver'] and filing_online == True"
+            text_en: "Reduced-fee and fee-waiver N-400s cannot be filed online — USCIS rejects them; file on paper."
+          - id: reduced_fee_no_proof
+            severity: reject
+            when: "fee_option == 'reduced_fee' and income_proof_attached == False"
+            text_en: "The $380 reduced fee requires documentation of household income; without it the packet is rejected for wrong fee."
+      - id: fee_paid
+        type: text
+        required_when: "fee_option == 'standard'"
+        label_en: "Fee you plan to pay (e.g., $760)"
+        label_es: "Tarifa que planea pagar (p. ej., $760)"
+        why_en: "Checked live against the current G-1055."
+        cite: ["8 CFR 106.2"]
+      - id: income_proof_attached
+        type: bool
+        required_when: "fee_option == 'reduced_fee'"
+        label_en: "Is proof of household income (tax transcript or pay stubs) attached?"
+        label_es: "¿Adjunta comprobante de ingresos del hogar (transcripción de impuestos o recibos de pago)?"
+        why_en: "Required for the reduced fee."
+        cite: ["Form G-1055"]
+      - id: n648_attached
+        type: bool
+        required_when: "disability_accommodation == True"
+        label_en: "Is Form N-648 (medical certification) attached?"
+        label_es: "¿Adjunta el Formulario N-648 (certificación médica)?"
+        why_en: "Required when claiming the medical exception."
+        cite: ["8 CFR 312.2(b)"]
+      - id: days_as_lpr
+        type: int
+        label_en: "How many days have you been a permanent resident as of the day you will file?"
+        label_es: "¿Cuántos días lleva como residente permanente al día en que presentará?"
+        why_en: "Drives the 90-day early-filing check."
+        cite: ["INA 334(a)"]
+      - id: days_at_current_address
+        type: int
+        label_en: "How many days have you lived at your current address?"
+        label_es: "¿Cuántos días lleva viviendo en su dirección actual?"
+        why_en: "Drives the 3-month state/district residence check."
+        cite: ["8 CFR 316.2(a)(5)"]
+      - id: moved_within_same_district
+        type: bool
+        required_when: "days_at_current_address is not None and days_at_current_address < 90"
+        label_en: "Was your previous address in the same state and USCIS district?"
+        label_es: "¿Su dirección anterior estaba en el mismo estado y distrito de USCIS?"
+        why_en: "Moving within the district does not restart the 3-month clock."
+        cite: ["8 CFR 316.2(a)(5)"]
+
+fees:
+  baseline_g1055_09_09_26:
+    paper: "$760"
+    online: "$710"
+    reduced_fee_paper_only: "$380 (household income ≤ 400% FPG)"
+    military_328_329: "$0"

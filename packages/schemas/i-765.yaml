@@ -368,7 +368,7 @@ sections:
         why_en: "Required for (c)(8) applicants who answered yes to Item 30."
         cite: ["USCIS Form I-765 Instructions, Required Documentation (c)(8)"]
       - id: days_until_ead_expiry
-        type: text
+        type: int
         required_when: "reason == 'renewal'"
         label_en: "How many days until your current EAD expires?"
         label_es: "¿Cuántos días faltan para que venza su EAD actual?"
