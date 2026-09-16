@@ -1,0 +1,166 @@
+# Form I-765, Application for Employment Authorization — field schema
+# One entry per interview question. pdf_field names are filled in after
+# `python -m packages.forms.inspect i-765` dumps the AcroForm names (Week 2).
+# cite[] = legal basis; risks[] = adjudicator seed rules. ES strings land Week 3.
+form: i-765
+title_en: Application for Employment Authorization
+title_es: Solicitud de Autorización de Empleo
+official_url: https://www.uscis.gov/i-765
+license: CC-BY-4.0
+
+sections:
+  - id: part1_reason
+    title_en: "Part 1. Reason for Applying"
+    fields:
+      - id: reason
+        type: choice
+        options: [initial, replacement, renewal]
+        label_en: "Why are you filing this application?"
+        label_es: "¿Por qué presenta esta solicitud?"
+        why_en: >
+          USCIS routes initial, replacement, and renewal requests differently and
+          checks different evidence for each. A renewal filed as an "initial"
+          can be treated as a new request and lose the automatic extension.
+        cite: ["8 CFR 274a.13(a)", "8 CFR 274a.13(d) (automatic extension)"]
+        risks:
+          - id: renewal_window
+            severity: rfe
+            when: "reason == renewal and days_until_expiry > 180"
+            text_en: "Renewals may be filed no earlier than 180 days before the current EAD expires."
+
+  - id: part2_info
+    title_en: "Part 2. Information About You"
+    fields:
+      - id: full_name
+        type: name
+        label_en: "Your full legal name (as on your passport or birth certificate)"
+        why_en: >
+          The name here is matched against your A-file, passport, and prior USCIS
+          records. A mismatch (missing middle name, different order) is a common
+          RFE trigger and delays card production.
+        cite: ["8 CFR 103.2(a)(2)"]
+        risks:
+          - id: name_mismatch
+            severity: rfe
+            when: "full_name != passport_name"
+            text_en: "Name does not match passport; add other names used in Item 2 or fix."
+      - id: other_names
+        type: list
+        label_en: "Other names you have used (maiden, aliases, nicknames)"
+        why_en: >
+          Background checks run on every name you have used. Omitting one is a
+          misrepresentation risk under INA §212(a)(6)(C) if it later surfaces.
+        cite: ["INA 212(a)(6)(C)(i)"]
+      - id: a_number
+        type: text
+        pattern: "^A?\\d{8,9}$"
+        required: false
+        label_en: "Alien Registration Number (A-Number), if any"
+        why_en: >
+          The A-Number links this application to your existing immigration file.
+          Leaving it blank when one exists creates a duplicate file and slows adjudication.
+        cite: ["8 CFR 103.2(b)(1)"]
+        risks:
+          - id: missing_a_number
+            severity: rfe
+            when: "a_number is blank and has_prior_uscis_filing"
+            text_en: "You said you filed with USCIS before, so you likely have an A-Number; find it on prior notices."
+      - id: uscis_online_account
+        type: text
+        required: false
+        label_en: "USCIS Online Account Number, if any"
+        why_en: "Ties the paper filing to your online account so you can track it."
+        cite: ["USCIS Form I-765 Instructions"]
+      - id: mailing_address
+        type: address
+        label_en: "U.S. mailing address (where the card should be sent)"
+        why_en: >
+          The EAD card is mailed here. An undeliverable card is returned to USCIS
+          and can take months to reissue.
+        cite: ["8 CFR 103.2(b)(19)"]
+      - id: dob
+        type: date
+        label_en: "Date of birth"
+        why_en: "Identity match across all USCIS systems and the FBI name check."
+        cite: ["8 CFR 103.2(a)(2)"]
+      - id: country_of_birth
+        type: text
+        label_en: "Country of birth"
+        why_en: "Determines which consular and background systems are queried."
+        cite: ["USCIS Form I-765 Instructions"]
+      - id: i94_number
+        type: text
+        required: false
+        label_en: "Form I-94 Arrival-Departure Record number, if any"
+        why_en: >
+          Confirms lawful entry and current status; for many categories the I-94
+          is the primary status evidence.
+        cite: ["8 CFR 274a.12"]
+      - id: ssn_apply
+        type: bool
+        label_en: "Do you want the SSA to issue you a Social Security card?"
+        why_en: >
+          USCIS shares your data with SSA so you do not need a separate visit.
+          Answering "No" here means a later trip to an SSA office.
+        cite: ["USCIS–SSA Enumeration Beyond Entry program"]
+
+  - id: part2_category
+    title_en: "Part 2. Eligibility Category"
+    fields:
+      - id: category
+        type: choice
+        label_en: "Eligibility category (the code in parentheses from the instructions, e.g. (c)(8))"
+        why_en: >
+          The category decides the fee, whether biometrics apply, the filing
+          address, and what evidence is required. This is the single most
+          consequential field on the form.
+        cite: ["8 CFR 274a.12(a), (c)"]
+        risks:
+          - id: category_blank
+            severity: reject
+            when: "category is blank"
+            text_en: "Item 27 (eligibility category) is blank — USCIS rejects at intake."
+          - id: pl119_21_fee_combined
+            severity: reject
+            when: "category in ['(a)(12)','(c)(8)','(c)(11)','(c)(19)','(c)(34)','(a)(4)'] and pl119_21_fee_paid_separately == false"
+            text_en: >
+              This category carries an additional Pub. L. 119-21 fee that must be paid as a
+              SEPARATE payment from the filing fee and cannot be waived. One combined check
+              is rejected. The amount depends on initial vs renewal — the live G-1055 row shown
+              in the app is authoritative.
+          - id: i485_pending_reduced_fee
+            severity: rfe
+            when: "has_pending_i485_filed_on_or_after_2024_04_01 and fee_paid != '$260'"
+            text_en: "With an I-485 filed with fee on/after Apr 1 2024 still pending, the I-765 fee is $260 (paper or online)."
+
+  - id: part3_signature
+    title_en: "Part 3. Applicant's Statement, Contact Information, Declaration, and Signature"
+    fields:
+      - id: signature_type
+        type: choice
+        options: [wet_ink, typed, stamped, software_generated, none]
+        label_en: "How will you sign the form?"
+        why_en: >
+          Since July 10, 2026 USCIS may deny an already-accepted filing if the
+          signature is found to be typed, stamped, software-generated, or made by
+          an unauthorized person — with loss of the filing fee. Sign in ink.
+        cite: ["DHS Interim Final Rule, 91 Fed. Reg. (May 11, 2026)", "8 CFR 103.2(a)(2)"]
+        risks:
+          - id: invalid_signature
+            severity: deny
+            when: "signature_type != wet_ink"
+            text_en: "Only a handwritten ink signature is accepted. Typed/stamped/e-signatures risk denial and fee forfeiture."
+          - id: unsigned
+            severity: reject
+            when: "signature_type == none"
+            text_en: "Unsigned forms are rejected at intake."
+
+fees:
+  # Never trusted at runtime — the RuleSnapshot fetched from uscis.gov wins.
+  # Kept only so tests can assert the parser against a known 2026 baseline.
+  baseline_g1055_09_09_26:
+    paper: "$520"
+    online: "$470"
+    i485_pending_after_2024_04_01: "$260"
+    pl119_21_additional_fee: "separate payment; $560 initial / $275–$280 renewal for TPS, (c)(8), parolee categories"
+    biometrics: "none listed for I-765 in this edition"
