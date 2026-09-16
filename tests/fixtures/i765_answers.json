@@ -1,0 +1,67 @@
+{
+  "reason": "renewal",
+  "full_name": {
+    "family": "Perez Gomez",
+    "given": "Maria",
+    "middle": "Luisa"
+  },
+  "other_names": [
+    {
+      "family": "Gomez",
+      "given": "Maria",
+      "middle": ""
+    }
+  ],
+  "mailing_address": {
+    "in_care_of": "",
+    "street": "123 Roosevelt Ave",
+    "unit_type": "apt",
+    "unit": "4B",
+    "city": "Jackson Heights",
+    "state": "NY",
+    "zip": "11372"
+  },
+  "mailing_same_as_physical": true,
+  "a_number": "A123456789",
+  "uscis_online_account": "",
+  "sex": "female",
+  "marital_status": "married",
+  "prior_i765": true,
+  "ssn": "",
+  "ssn_apply": true,
+  "citizenship_countries": [
+    "Colombia"
+  ],
+  "place_of_birth": {
+    "city": "Medellin",
+    "state": "Antioquia",
+    "country": "Colombia"
+  },
+  "dob": "1991-04-17",
+  "i94_number": "12345678901",
+  "passport": {
+    "number": "AB1234567",
+    "country": "Colombia",
+    "expires": "2029-01-31"
+  },
+  "last_entry_date": "2023-06-02",
+  "last_entry_place": "New York, NY",
+  "status_at_entry": "B-2 visitor",
+  "current_status": "Asylum applicant (pending I-589)",
+  "category": "(c)(8)",
+  "c8_arrested": false,
+  "read_language": "interpreter",
+  "interpreter_language": "Spanish",
+  "used_preparer": false,
+  "daytime_phone": "7185551212",
+  "mobile_phone": "7185551212",
+  "email": "maria@example.com",
+  "signature_type": "typed",
+  "signature_date": "2026-09-20",
+  "pl119_21_fee_paid_separately": false,
+  "fee_paid": "$520",
+  "days_until_ead_expiry": 40,
+  "filing_online": false,
+  "i485_pending_filed_after_2024_04_01": false,
+  "court_dispositions_attached": false
+}

@@ -1,0 +1,38 @@
+{
+  "form": "i-765",
+  "fetched_at": "2026-09-16T23:15:21+00:00",
+  "edition_dates": {
+    "value": "08/21/25",
+    "source_url": "https://www.uscis.gov/i-765",
+    "excerpt": "Edition Date |  | 08/21/25. You can find the edition date at the bottom of the page on the form and instructions."
+  },
+  "edition_alert": {
+    "value": "09/15/26",
+    "source_url": "https://www.uscis.gov/i-765",
+    "excerpt": "ALERT: On Sept. 15, 2026, we will publish a revised edition of Form I-765, Application for Employment Authorization (edition date: 09/15/26)."
+  },
+  "fee_schedule_edition": "09/09/26",
+  "fee_table_excerpt": "Appendix C: I-765 — General filing $520 paper / $470 online; $260 with I-485 filed on/after 2024-04-01 pending; $0 USCIS card error; Pub. L. 119-21 additional fee (separate payment, not waivable): $560 initial for (a)(12) TPS, (c)(8) ABC, (c)(11) parolee, (c)(19); $275 renewal (c)(8); $280 renewal TPS/parolee/(a)(4)/(c)(34).",
+  "fee_paper": {
+    "value": "$520",
+    "source_url": "https://www.uscis.gov/sites/default/files/document/forms/g-1055.pdf",
+    "excerpt": "I-765 ... General filing for initial, replacement, or renewal EAD ... Paper Filing: $520 Online Filing: $470"
+  },
+  "fee_online": {
+    "value": "$470",
+    "source_url": "https://www.uscis.gov/sites/default/files/document/forms/g-1055.pdf",
+    "excerpt": "Paper Filing: $520 Online Filing: $470"
+  },
+  "biometrics_note": {
+    "value": null,
+    "source_url": null,
+    "excerpt": null
+  },
+  "where_to_file_url": "https://www.uscis.gov/i-765-addresses",
+  "processing_time_url": "https://egov.uscis.gov/processing-times/",
+  "raw_sources": [
+    "https://www.uscis.gov/i-765",
+    "https://www.uscis.gov/sites/default/files/document/forms/g-1055.pdf"
+  ],
+  "warnings": []
+}

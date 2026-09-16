@@ -1,16 +1,23 @@
 # Form I-765, Application for Employment Authorization — field schema
-# One entry per interview question. pdf_field names are filled in after
-# `python -m packages.forms.inspect i-765` dumps the AcroForm names (Week 2).
-# cite[] = legal basis; risks[] = adjudicator seed rules. ES strings land Week 3.
+# Edition this schema was mapped against: 08/21/25 (PDF field names verified with
+# `python -m packages.forms.inspect packages/forms/pdf/i-765.pdf`). A 09/15/26
+# edition was announced; re-run the inspector and diff when it lands.
+#
+# One entry per interview question. Composite types (name, address, category)
+# fan out to several PDF fields in packages/forms/maps/i_765.py.
+# cite[] = legal basis; risks[] = adjudicator seed rules (see packages/rules/checks.py).
 form: i-765
 title_en: Application for Employment Authorization
 title_es: Solicitud de Autorización de Empleo
 official_url: https://www.uscis.gov/i-765
+pdf: packages/forms/pdf/i-765.pdf
+pdf_edition: "08/21/25"
 license: CC-BY-4.0
 
 sections:
   - id: part1_reason
     title_en: "Part 1. Reason for Applying"
+    title_es: "Parte 1. Motivo de la solicitud"
     fields:
       - id: reason
         type: choice
@@ -25,15 +32,21 @@ sections:
         risks:
           - id: renewal_window
             severity: rfe
-            when: "reason == renewal and days_until_expiry > 180"
+            when: "reason == 'renewal' and days_until_ead_expiry > 180"
             text_en: "Renewals may be filed no earlier than 180 days before the current EAD expires."
+          - id: replacement_uscis_error
+            severity: rfe
+            when: "reason == 'replacement' and card_error_by_uscis == True"
+            text_en: "If the card error was USCIS's fault, do not file a new I-765 or pay a fee — use the card-error replacement process instead."
 
-  - id: part2_info
+  - id: part2_identity
     title_en: "Part 2. Information About You"
+    title_es: "Parte 2. Información sobre usted"
     fields:
       - id: full_name
         type: name
-        label_en: "Your full legal name (as on your passport or birth certificate)"
+        label_en: "Your full legal name (exactly as on your passport or birth certificate)"
+        label_es: "Su nombre legal completo (exactamente como aparece en su pasaporte o acta de nacimiento)"
         why_en: >
           The name here is matched against your A-file, passport, and prior USCIS
           records. A mismatch (missing middle name, different order) is a common
@@ -42,20 +55,46 @@ sections:
         risks:
           - id: name_mismatch
             severity: rfe
-            when: "full_name != passport_name"
-            text_en: "Name does not match passport; add other names used in Item 2 or fix."
+            when: "passport_name and full_name.family != passport_name.family"
+            text_en: "Family name does not match passport; list the other spelling under Other Names Used."
       - id: other_names
         type: list
+        item_type: name
+        max_items: 3
+        required: false
         label_en: "Other names you have used (maiden, aliases, nicknames)"
+        label_es: "Otros nombres que ha usado (de soltera, alias, apodos)"
         why_en: >
           Background checks run on every name you have used. Omitting one is a
           misrepresentation risk under INA §212(a)(6)(C) if it later surfaces.
         cite: ["INA 212(a)(6)(C)(i)"]
+      - id: mailing_address
+        type: address
+        label_en: "U.S. mailing address (where the card should be sent)"
+        label_es: "Dirección postal en EE. UU. (adonde se enviará la tarjeta)"
+        why_en: >
+          The EAD card is mailed here. An undeliverable card is returned to USCIS
+          and can take months to reissue.
+        cite: ["8 CFR 103.2(b)(19)"]
+      - id: mailing_same_as_physical
+        type: bool
+        label_en: "Is your mailing address the same as where you physically live?"
+        label_es: "¿Su dirección postal es la misma que la de su residencia física?"
+        why_en: "USCIS needs your physical residence for jurisdiction and background checks even when mail goes elsewhere."
+        cite: ["USCIS Form I-765 Instructions, Part 2 Item 6"]
+      - id: physical_address
+        type: address
+        required_when: "mailing_same_as_physical == False"
+        label_en: "U.S. physical address (where you live)"
+        label_es: "Dirección física en EE. UU. (donde vive)"
+        why_en: "Required whenever the mailing address is a P.O. box, a lawyer's office, or a friend's home."
+        cite: ["USCIS Form I-765 Instructions, Part 2 Item 7"]
       - id: a_number
         type: text
         pattern: "^A?\\d{8,9}$"
         required: false
         label_en: "Alien Registration Number (A-Number), if any"
+        label_es: "Número de Registro de Extranjero (A-Number), si tiene"
         why_en: >
           The A-Number links this application to your existing immigration file.
           Leaving it blank when one exists creates a duplicate file and slows adjudication.
@@ -63,66 +102,145 @@ sections:
         risks:
           - id: missing_a_number
             severity: rfe
-            when: "a_number is blank and has_prior_uscis_filing"
-            text_en: "You said you filed with USCIS before, so you likely have an A-Number; find it on prior notices."
+            when: "not a_number and prior_i765 == True"
+            text_en: "You have filed an I-765 before, so you almost certainly have an A-Number; it is on prior USCIS notices and your EAD."
       - id: uscis_online_account
         type: text
         required: false
         label_en: "USCIS Online Account Number, if any"
+        label_es: "Número de cuenta en línea de USCIS, si tiene"
         why_en: "Ties the paper filing to your online account so you can track it."
-        cite: ["USCIS Form I-765 Instructions"]
-      - id: mailing_address
-        type: address
-        label_en: "U.S. mailing address (where the card should be sent)"
-        why_en: >
-          The EAD card is mailed here. An undeliverable card is returned to USCIS
-          and can take months to reissue.
-        cite: ["8 CFR 103.2(b)(19)"]
-      - id: dob
-        type: date
-        label_en: "Date of birth"
-        why_en: "Identity match across all USCIS systems and the FBI name check."
-        cite: ["8 CFR 103.2(a)(2)"]
-      - id: country_of_birth
+        cite: ["USCIS Form I-765 Instructions, Part 2 Item 9"]
+      - id: sex
+        type: choice
+        options: [female, male]
+        label_en: "Sex (as it should appear on the card)"
+        label_es: "Sexo (como debe aparecer en la tarjeta)"
+        why_en: "Printed on the EAD; must match other identity documents to avoid a card correction."
+        cite: ["USCIS Form I-765 Instructions, Part 2 Item 10"]
+      - id: marital_status
+        type: choice
+        options: [single, married, divorced, widowed]
+        label_en: "Marital status"
+        label_es: "Estado civil"
+        why_en: "Some categories (e.g., dependents of visa holders) depend on a current marriage."
+        cite: ["USCIS Form I-765 Instructions, Part 2 Item 11"]
+      - id: prior_i765
+        type: bool
+        label_en: "Have you ever filed Form I-765 before?"
+        label_es: "¿Ha presentado el Formulario I-765 anteriormente?"
+        why_en: "Tells USCIS to pull your prior file; answering 'No' when you have filed before reads as a misstatement."
+        cite: ["USCIS Form I-765 Instructions, Part 2 Item 12"]
+      - id: ssn
         type: text
-        label_en: "Country of birth"
-        why_en: "Determines which consular and background systems are queried."
-        cite: ["USCIS Form I-765 Instructions"]
-      - id: i94_number
-        type: text
+        pattern: "^\\d{9}$"
         required: false
-        label_en: "Form I-94 Arrival-Departure Record number, if any"
-        why_en: >
-          Confirms lawful entry and current status; for many categories the I-94
-          is the primary status evidence.
-        cite: ["8 CFR 274a.12"]
+        label_en: "Social Security Number, if you already have one"
+        label_es: "Número de Seguro Social, si ya tiene uno"
+        why_en: "If you already have an SSN, USCIS will not ask SSA to issue another; a wrong number here creates a mismatch at SSA."
+        cite: ["USCIS Form I-765 Instructions, Part 2 Item 13"]
       - id: ssn_apply
         type: bool
         label_en: "Do you want the SSA to issue you a Social Security card?"
+        label_es: "¿Desea que la SSA le emita una tarjeta de Seguro Social?"
         why_en: >
           USCIS shares your data with SSA so you do not need a separate visit.
           Answering "No" here means a later trip to an SSA office.
         cite: ["USCIS–SSA Enumeration Beyond Entry program"]
+      - id: citizenship_countries
+        type: list
+        item_type: text
+        max_items: 2
+        label_en: "Country or countries of citizenship or nationality"
+        label_es: "País o países de ciudadanía o nacionalidad"
+        why_en: "Determines which consular and background systems are queried and whether TPS or parole categories apply."
+        cite: ["USCIS Form I-765 Instructions, Part 2 Item 14"]
+      - id: place_of_birth
+        type: place
+        label_en: "Place of birth (city, state/province, country)"
+        label_es: "Lugar de nacimiento (ciudad, estado/provincia, país)"
+        why_en: "Identity match across USCIS, State Department and FBI systems."
+        cite: ["8 CFR 103.2(a)(2)"]
+      - id: dob
+        type: date
+        label_en: "Date of birth"
+        label_es: "Fecha de nacimiento"
+        why_en: "Identity match across all USCIS systems and the FBI name check."
+        cite: ["8 CFR 103.2(a)(2)"]
+
+  - id: part2_arrival
+    title_en: "Part 2. Your Last Arrival in the United States"
+    title_es: "Parte 2. Su última llegada a los Estados Unidos"
+    fields:
+      - id: i94_number
+        type: text
+        required: false
+        label_en: "Form I-94 Arrival-Departure Record number, if any (11 characters)"
+        label_es: "Número del Registro I-94 de llegada/salida, si tiene (11 caracteres)"
+        why_en: "Confirms lawful entry and current status; for many categories the I-94 is the primary status evidence."
+        cite: ["8 CFR 274a.12"]
+      - id: passport
+        type: passport
+        required: false
+        label_en: "Most recent passport or travel document (number, issuing country, expiration)"
+        label_es: "Pasaporte o documento de viaje más reciente (número, país emisor, vencimiento)"
+        why_en: "Identity and nationality evidence; an expired passport is not a rejection trigger but a missing number often draws an RFE."
+        cite: ["USCIS Form I-765 Instructions, Part 2 Items 18–21"]
+      - id: last_entry_date
+        type: date
+        required: false
+        label_en: "Date of your last entry into the U.S."
+        label_es: "Fecha de su última entrada a EE. UU."
+        why_en: "Starts the clock on your current period of stay and on continuous-presence rules for some categories."
+        cite: ["USCIS Form I-765 Instructions, Part 2 Item 22"]
+      - id: last_entry_place
+        type: text
+        required: false
+        label_en: "Place of last arrival (city and state, or port of entry)"
+        label_es: "Lugar de la última llegada (ciudad y estado, o puerto de entrada)"
+        why_en: "Lets USCIS locate your CBP arrival record."
+        cite: ["USCIS Form I-765 Instructions, Part 2 Item 23"]
+      - id: status_at_entry
+        type: text
+        required: false
+        label_en: "Immigration status at your last arrival (e.g., B-2, F-1, parolee, no status)"
+        label_es: "Estatus migratorio en su última llegada (p. ej., B-2, F-1, parole, sin estatus)"
+        why_en: "Establishes how you entered; some categories require lawful admission or parole."
+        cite: ["USCIS Form I-765 Instructions, Part 2 Item 24"]
+      - id: current_status
+        type: text
+        required: false
+        label_en: "Current immigration status or category"
+        label_es: "Estatus o categoría migratoria actual"
+        why_en: "Must be consistent with the eligibility category you claim in Item 27."
+        cite: ["USCIS Form I-765 Instructions, Part 2 Item 25"]
+        risks:
+          - id: status_category_conflict
+            severity: rfe
+            when: "current_status and category == '(c)(8)' and 'asyl' not in current_status.lower() and 'pending' not in current_status.lower()"
+            text_en: "You claim (c)(8) (pending asylum) but your current status does not mention a pending asylum application — make sure Item 25 and Item 27 tell the same story."
 
   - id: part2_category
-    title_en: "Part 2. Eligibility Category"
+    title_en: "Part 2. Your Eligibility Category"
+    title_es: "Parte 2. Su categoría de elegibilidad"
     fields:
       - id: category
-        type: choice
-        label_en: "Eligibility category (the code in parentheses from the instructions, e.g. (c)(8))"
+        type: category
+        label_en: "Eligibility category — the code in parentheses from the instructions, e.g. (c)(8), (c)(9), (a)(12)"
+        label_es: "Categoría de elegibilidad — el código entre paréntesis de las instrucciones, p. ej. (c)(8), (c)(9), (a)(12)"
         why_en: >
-          The category decides the fee, whether biometrics apply, the filing
-          address, and what evidence is required. This is the single most
-          consequential field on the form.
-        cite: ["8 CFR 274a.12(a), (c)"]
+          The category decides the fee, whether an additional Pub. L. 119-21 fee
+          applies, the filing address, and what evidence is required. This is the
+          single most consequential field on the form.
+        cite: ["8 CFR 274a.12(a), (c)", "Form G-1055 Appendix C"]
         risks:
           - id: category_blank
             severity: reject
-            when: "category is blank"
+            when: "not category"
             text_en: "Item 27 (eligibility category) is blank — USCIS rejects at intake."
           - id: pl119_21_fee_combined
             severity: reject
-            when: "category in ['(a)(12)','(c)(8)','(c)(11)','(c)(19)','(c)(34)','(a)(4)'] and pl119_21_fee_paid_separately == false"
+            when: "category in ['(a)(12)','(c)(8)','(c)(11)','(c)(19)','(c)(34)','(a)(4)'] and pl119_21_fee_paid_separately == False"
             text_en: >
               This category carries an additional Pub. L. 119-21 fee that must be paid as a
               SEPARATE payment from the filing fee and cannot be waived. One combined check
@@ -130,34 +248,136 @@ sections:
               in the app is authoritative.
           - id: i485_pending_reduced_fee
             severity: rfe
-            when: "has_pending_i485_filed_on_or_after_2024_04_01 and fee_paid != '$260'"
+            when: "i485_pending_filed_after_2024_04_01 == True and fee_paid not in ['$260', 260]"
             text_en: "With an I-485 filed with fee on/after Apr 1 2024 still pending, the I-765 fee is $260 (paper or online)."
+      - id: c8_arrested
+        type: bool
+        required_when: "category == '(c)(8)'"
+        label_en: "(c)(8) only: have you EVER been arrested for or convicted of any crime?"
+        label_es: "Solo (c)(8): ¿alguna vez ha sido arrestado o condenado por algún delito?"
+        why_en: >
+          Asylum-based EAD applicants must disclose arrests; if yes, certified court
+          dispositions are required. Saying no when records exist is a denial ground.
+        cite: ["8 CFR 208.7", "USCIS Form I-765 Instructions, Part 2 Item 30"]
+        risks:
+          - id: c8_dispositions_missing
+            severity: rfe
+            when: "c8_arrested == True and court_dispositions_attached == False"
+            text_en: "You answered yes to Item 30; attach certified court dispositions for every arrest or the case will get an RFE."
 
-  - id: part3_signature
+  - id: part3_statement
     title_en: "Part 3. Applicant's Statement, Contact Information, Declaration, and Signature"
+    title_es: "Parte 3. Declaración del solicitante, información de contacto y firma"
     fields:
+      - id: read_language
+        type: choice
+        options: [english, interpreter]
+        label_en: "Did you read this form yourself in English, or did an interpreter read it to you?"
+        label_es: "¿Leyó usted mismo este formulario en inglés, o se lo leyó un intérprete?"
+        why_en: "If an interpreter helped, Part 4 must be completed and signed by them; otherwise USCIS may question whether you understood what you signed."
+        cite: ["USCIS Form I-765 Instructions, Part 3 Item 1"]
+      - id: interpreter_language
+        type: text
+        required_when: "read_language == 'interpreter'"
+        label_en: "Language the interpreter used"
+        label_es: "Idioma que usó el intérprete"
+        why_en: "Recorded so USCIS can provide the same language at any interview."
+        cite: ["USCIS Form I-765 Instructions, Part 3 Item 1.B"]
+      - id: used_preparer
+        type: bool
+        label_en: "Did someone else prepare this form for you (a lawyer, notario, or friend)?"
+        label_es: "¿Alguien más preparó este formulario por usted (abogado, notario o amigo)?"
+        why_en: "If yes, Part 5 must be completed by the preparer. Undisclosed paid preparers are a fraud indicator."
+        cite: ["USCIS Form I-765 Instructions, Part 3 Item 2", "8 CFR 1003.102"]
+      - id: daytime_phone
+        type: text
+        label_en: "Daytime telephone number"
+        label_es: "Número de teléfono diurno"
+        why_en: "USCIS calls this number for appointment changes and to resolve simple deficiencies."
+        cite: ["USCIS Form I-765 Instructions, Part 3 Item 3"]
+      - id: mobile_phone
+        type: text
+        required: false
+        label_en: "Mobile number, if any"
+        label_es: "Número de celular, si tiene"
+        why_en: "Used for text notifications if you also file Form G-1145."
+        cite: ["USCIS Form G-1145"]
+      - id: email
+        type: text
+        required: false
+        label_en: "Email address, if any"
+        label_es: "Correo electrónico, si tiene"
+        why_en: "Used for account notices; a mistyped address means missed RFE alerts."
+        cite: ["USCIS Form I-765 Instructions, Part 3 Item 5"]
       - id: signature_type
         type: choice
         options: [wet_ink, typed, stamped, software_generated, none]
         label_en: "How will you sign the form?"
+        label_es: "¿Cómo firmará el formulario?"
         why_en: >
           Since July 10, 2026 USCIS may deny an already-accepted filing if the
           signature is found to be typed, stamped, software-generated, or made by
-          an unauthorized person — with loss of the filing fee. Sign in ink.
-        cite: ["DHS Interim Final Rule, 91 Fed. Reg. (May 11, 2026)", "8 CFR 103.2(a)(2)"]
+          an unauthorized person — with loss of the filing fee. The PDF itself says
+          it "can not be signed electronically." Sign in ink after printing.
+        cite: ["DHS Interim Final Rule, Fed. Reg. (May 11, 2026)", "8 CFR 103.2(a)(2)"]
         risks:
           - id: invalid_signature
             severity: deny
-            when: "signature_type != wet_ink"
+            when: "signature_type in ['typed','stamped','software_generated']"
             text_en: "Only a handwritten ink signature is accepted. Typed/stamped/e-signatures risk denial and fee forfeiture."
           - id: unsigned
             severity: reject
-            when: "signature_type == none"
+            when: "signature_type == 'none'"
             text_en: "Unsigned forms are rejected at intake."
+
+  - id: filing
+    title_en: "Before You Mail — Fee and Packet"
+    title_es: "Antes de enviar — Tarifa y paquete"
+    # Not printed on the PDF; feeds the adjudicator's fee/edition/payment checks.
+    fields:
+      - id: filing_online
+        type: bool
+        label_en: "Will you file online (myUSCIS) instead of mailing paper?"
+        label_es: "¿Presentará en línea (myUSCIS) en lugar de enviar papel?"
+        why_en: "Online filing is $50 cheaper for this form and avoids lockbox rejections; some categories cannot file online."
+        cite: ["Form G-1055"]
+      - id: fee_paid
+        type: text
+        label_en: "Filing fee you plan to pay (e.g., $520)"
+        label_es: "Tarifa de presentación que planea pagar (p. ej., $520)"
+        why_en: "USCIS rejects any packet with the wrong fee amount; the amount is checked live against the current G-1055."
+        cite: ["8 CFR 106.2", "Form G-1055"]
+      - id: i485_pending_filed_after_2024_04_01
+        type: bool
+        label_en: "Do you have a pending I-485 that you filed WITH a fee on or after April 1, 2024?"
+        label_es: "¿Tiene un I-485 pendiente que presentó CON tarifa el 1 de abril de 2024 o después?"
+        why_en: "Those applicants pay a reduced $260 I-765 fee; paying full price is not refunded automatically."
+        cite: ["Form G-1055 Appendix C"]
+      - id: pl119_21_fee_paid_separately
+        type: bool
+        required_when: "category in ['(a)(12)','(c)(8)','(c)(11)','(c)(19)','(c)(34)','(a)(4)']"
+        label_en: "Will you pay the additional Pub. L. 119-21 fee as a SEPARATE payment (second check or card form)?"
+        label_es: "¿Pagará la tarifa adicional de la Ley Pública 119-21 como un pago SEPARADO (segundo cheque o formulario de tarjeta)?"
+        why_en: "For your category USCIS requires this fee as its own payment; one combined check is rejected."
+        cite: ["Form G-1055 Appendix C", "Pub. L. 119-21"]
+      - id: court_dispositions_attached
+        type: bool
+        required_when: "c8_arrested == True"
+        label_en: "Are certified court dispositions for every arrest attached?"
+        label_es: "¿Adjunta disposiciones judiciales certificadas de cada arresto?"
+        why_en: "Required for (c)(8) applicants who answered yes to Item 30."
+        cite: ["USCIS Form I-765 Instructions, Required Documentation (c)(8)"]
+      - id: days_until_ead_expiry
+        type: text
+        required_when: "reason == 'renewal'"
+        label_en: "How many days until your current EAD expires?"
+        label_es: "¿Cuántos días faltan para que venza su EAD actual?"
+        why_en: "Renewals filed more than 180 days early are rejected; filing late risks a gap in work authorization."
+        cite: ["8 CFR 274a.13(d)"]
 
 fees:
   # Never trusted at runtime — the RuleSnapshot fetched from uscis.gov wins.
-  # Kept only so tests can assert the parser against a known 2026 baseline.
+  # Baseline kept so tests can assert the parser against a known edition.
   baseline_g1055_09_09_26:
     paper: "$520"
     online: "$470"

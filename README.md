@@ -35,17 +35,28 @@ curl http://127.0.0.1:8000/health
 curl http://127.0.0.1:8000/rules/i-765          # live from uscis.gov via Tavily
 curl http://127.0.0.1:8000/forms/i-765          # schema with why + cites + risks
 curl -X POST http://127.0.0.1:8000/explain/i-765/category -H "content-type: application/json" -d "{\"lang\":\"es\"}"
+
+# Interview → check → fill (works offline; Nemotron only phrases/parses when NEBIUS_API_KEY is set)
+curl -X POST http://127.0.0.1:8000/interview/start -H "content-type: application/json" -d "{\"form\":\"i-765\",\"lang\":\"es\"}"
+curl -X POST http://127.0.0.1:8000/interview/<sid>/answer -H "content-type: application/json" -d "{\"field_id\":\"reason\",\"value\":\"renewal\"}"
+curl -X POST http://127.0.0.1:8000/interview/<sid>/check      # deny / reject / rfe / info findings, cited
+curl -o i-765.filled.pdf http://127.0.0.1:8000/interview/<sid>/fill
 ```
+
+The filler never writes the signature field: the official PDF says it "can not be signed electronically", and a typed name there is a denial trigger under the July 2026 signature rule.
 
 ## Layout
 
 ```
-apps/api/app/main.py      FastAPI: /health /forms /rules /explain  (interview, fill, adjudicate → weeks 2-4)
-packages/schemas/*.yaml   field → pdf_field → statute → risk, EN/ES  (CC-BY-4.0 open dataset)
-packages/rules/           Tavily RuleSnapshot + uscis.gov parsers + 24h cache
-packages/agents/          Nebius/Nemotron client (reasoning + fast tiers, structured output)
-packages/forms/           official USCIS PDFs + AcroForm inspector
-tests/                    offline parser + API tests
+apps/api/app/main.py      FastAPI: /health /forms /rules /explain /interview/* (start, answer, check, fill)
+packages/schemas/*.yaml   field → statute → risk, EN/ES, required_when branching  (CC-BY-4.0 open dataset)
+packages/rules/snapshot   Tavily RuleSnapshot: uscis.gov form page + G-1055 PDF → edition, fee, addresses; 24h cache;
+                          falls back to packages/rules/known/*.json (flagged stale) if the live lookup fails
+packages/rules/checks     deterministic adjudicator core: schema risks, required_when, edition drift, fee drift
+packages/agents/nebius    Nebius/Nemotron client (reasoning + fast tiers, structured output)
+packages/agents/interview deterministic question order; Nemotron phrases questions + parses free text (optional)
+packages/forms/           official USCIS PDFs, AcroForm inspector, answers→field maps, pypdf filler
+tests/                    19 offline tests incl. real-PDF fill + read-back and a seeded bad packet
 ```
 
 ## Roadmap
@@ -53,7 +64,7 @@ tests/                    offline parser + API tests
 | Week | Deliverable |
 |---|---|
 | 1 | Scaffold, Nebius client, Tavily RuleSnapshot, I-765 schema (EN) ✅ |
-| 2 | Interview agent on I-765; pypdf fill of the official PDF |
+| 2 | Interview agent on I-765; pypdf fill of the official PDF; deterministic adjudicator core ✅ |
 | 3 | Explainer + citations; Spanish for I-765; N-400 schema |
 | 4 | Adjudicator agent + deterministic checks; I-130 schema + fill |
 | 5 | Processing-time predictor; Deadline Sentinel |

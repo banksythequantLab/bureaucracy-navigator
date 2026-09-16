@@ -1,20 +1,28 @@
-"""Bureaucracy Navigator API — week-1 surface.
+"""Bureaucracy Navigator API.
 
-GET  /health                 liveness + which keys are configured
-GET  /forms                  schemas available
-GET  /forms/{form}           full schema (fields, why, cites, risks)
-GET  /rules/{form}           live RuleSnapshot from uscis.gov via Tavily
-POST /explain/{form}/{field} plain-language "why does this field exist" via Nemotron
+GET  /health                        liveness + which keys are configured
+GET  /forms                         schemas available
+GET  /forms/{form}                  full schema (fields, why, cites, risks)
+GET  /rules/{form}                  live RuleSnapshot from uscis.gov via Tavily
+POST /explain/{form}/{field}        plain-language "why does this field exist" via Nemotron
+POST /interview/start               {form, lang} → session + first question
+GET  /interview/{sid}               state + next question + progress
+POST /interview/{sid}/answer        {field_id, value | skip} → next question
+POST /interview/{sid}/check         deterministic findings (+ live snapshot)
+GET  /interview/{sid}/fill          filled official PDF (signature never filled)
 """
 from __future__ import annotations
 
 import os
-from typing import Literal
+from typing import Any, Literal
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Response
 from pydantic import BaseModel
 
+from packages.agents import interview as iv
 from packages.agents import nebius
+from packages.forms.fill import fill_pdf
+from packages.rules.checks import Finding, run_checks
 from packages.rules.snapshot import RuleSnapshot, build_snapshot
 from packages.schemas.loader import available_forms, load_schema
 
@@ -100,3 +108,106 @@ def explain(form: str, field_id: str, req: ExplainRequest) -> ExplainResponse:
         cites=field.cite,
         disclaimer=DISCLAIMER_ES if req.lang == "es" else DISCLAIMER_EN,
     )
+
+
+# ----------------------------------------------------------------- interview
+class StartRequest(BaseModel):
+    form: str = "i-765"
+    lang: Literal["en", "es"] = "en"
+
+
+class InterviewState(BaseModel):
+    session_id: str
+    form: str
+    lang: str
+    progress: dict[str, int]
+    question: iv.Question | None
+    done: bool
+    answers: dict[str, Any]
+
+
+def _state(s: iv.Session) -> InterviewState:
+    schema = load_schema(s.form)
+    q = iv.question_for(schema, s)
+    return InterviewState(session_id=s.id, form=s.form, lang=s.lang, progress=iv.progress(schema, s),
+                          question=q, done=q is None, answers=s.answers)
+
+
+def _session(sid: str) -> iv.Session:
+    try:
+        return iv.Session.load(sid)
+    except KeyError as e:
+        raise HTTPException(404, f"no session {sid}") from e
+
+
+@app.post("/interview/start", response_model=InterviewState)
+def interview_start(req: StartRequest) -> InterviewState:
+    if req.form not in available_forms():
+        raise HTTPException(404, f"no schema for {req.form}")
+    return _state(iv.start(req.form, req.lang))
+
+
+@app.get("/interview/{sid}", response_model=InterviewState)
+def interview_get(sid: str) -> InterviewState:
+    return _state(_session(sid))
+
+
+class AnswerRequest(BaseModel):
+    field_id: str
+    value: Any = None
+    skip: bool = False
+
+
+@app.post("/interview/{sid}/answer", response_model=InterviewState)
+def interview_answer(sid: str, req: AnswerRequest) -> InterviewState:
+    s = _session(sid)
+    try:
+        iv.answer(load_schema(s.form), s, req.field_id, req.value, skip=req.skip)
+    except KeyError as e:
+        raise HTTPException(404, f"no field {req.field_id}") from e
+    except ValueError as e:
+        raise HTTPException(422, str(e)) from e
+    return _state(s)
+
+
+class CheckResponse(BaseModel):
+    findings: list[Finding]
+    counts: dict[str, int]
+    snapshot_fetched_at: str | None
+    snapshot_stale: bool = False
+    snapshot_warnings: list[str] = []
+    disclaimer: str
+
+
+@app.post("/interview/{sid}/check", response_model=CheckResponse)
+def interview_check(sid: str, live: bool = True) -> CheckResponse:
+    s = _session(sid)
+    schema = load_schema(s.form)
+    snap = None
+    if live:
+        try:
+            snap = build_snapshot(s.form)
+        except Exception:  # noqa: BLE001 - checks still run without the live layer
+            snap = None
+    findings = run_checks(schema, s.answers, snap)
+    counts: dict[str, int] = {}
+    for f in findings:
+        counts[f.severity] = counts.get(f.severity, 0) + 1
+    return CheckResponse(findings=findings, counts=counts,
+                         snapshot_fetched_at=snap.fetched_at if snap else None,
+                         snapshot_stale=snap.stale if snap else False,
+                         snapshot_warnings=snap.warnings if snap else [],
+                         disclaimer=DISCLAIMER_ES if s.lang == "es" else DISCLAIMER_EN)
+
+
+@app.get("/interview/{sid}/fill")
+def interview_fill(sid: str) -> Response:
+    s = _session(sid)
+    try:
+        data = fill_pdf(s.form, s.answers)
+    except FileNotFoundError as e:
+        raise HTTPException(503, f"official PDF not present on server: {e}") from e
+    except KeyError as e:
+        raise HTTPException(500, str(e)) from e
+    return Response(content=data, media_type="application/pdf",
+                    headers={"Content-Disposition": f'attachment; filename="{s.form}-{s.id}.pdf"'})

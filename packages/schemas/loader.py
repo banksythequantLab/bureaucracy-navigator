@@ -26,8 +26,11 @@ class FieldDef(BaseModel):
     why_en: str | None = None
     why_es: str | None = None
     required: bool = True
+    required_when: str | None = None  # python-ish expression over answers; see rules/checks.py
     options: list[str] | None = None
     pattern: str | None = None
+    item_type: str | None = None
+    max_items: int | None = None
     pdf_field: str | None = None
     cite: list[str] = Field(default_factory=list)
     risks: list[Risk] = Field(default_factory=list)
@@ -45,6 +48,8 @@ class FormSchema(BaseModel):
     title_en: str
     title_es: str | None = None
     official_url: str
+    pdf: str | None = None
+    pdf_edition: str | None = None
     license: str = "CC-BY-4.0"
     sections: list[Section]
     fees: dict[str, Any] = Field(default_factory=dict)

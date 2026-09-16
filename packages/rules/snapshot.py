@@ -64,6 +64,7 @@ class RuleSnapshot(BaseModel):
     processing_time_url: Optional[str] = None
     raw_sources: list[str] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
+    stale: bool = False  # True when served from packages/rules/known/ because the live lookup failed
 
     @property
     def verified(self) -> bool:
@@ -218,7 +219,21 @@ def _save_cache(snap: RuleSnapshot) -> None:
 
 
 # --------------------------------------------------------------------------- public
-def build_snapshot(form: str, *, use_cache: bool = True) -> RuleSnapshot:
+KNOWN_DIR = Path(__file__).parent / "known"
+
+
+def known_snapshot(form: str) -> Optional[RuleSnapshot]:
+    """Last live snapshot committed to the repo — the offline fallback, always flagged stale."""
+    p = KNOWN_DIR / f"{form}.json"
+    if not p.exists():
+        return None
+    s = RuleSnapshot.model_validate_json(p.read_text(encoding="utf-8"))
+    s.stale = True
+    return s
+
+
+def build_snapshot(form: str, *, use_cache: bool = True, allow_stale: bool = True) -> RuleSnapshot:
+    """Live snapshot; on Tavily failure fall back to the committed known snapshot (flagged stale)."""
     form = form.lower()
     if form not in FORM_PAGES:
         raise ValueError(f"Unknown form '{form}'. Known: {sorted(FORM_PAGES)}")
@@ -226,7 +241,19 @@ def build_snapshot(form: str, *, use_cache: bool = True) -> RuleSnapshot:
         cached = _load_cache(form)
         if cached:
             return cached
+    try:
+        return _build_live(form)
+    except Exception as e:  # noqa: BLE001
+        if not allow_stale:
+            raise
+        known = known_snapshot(form)
+        if known is None:
+            raise
+        known.warnings.append(f"Live lookup failed ({type(e).__name__}); showing last verified snapshot from {known.fetched_at[:10]}.")
+        return known
 
+
+def _build_live(form: str) -> RuleSnapshot:
     snap = RuleSnapshot(form=form, fetched_at=datetime.now(timezone.utc).isoformat())
     form_url = FORM_PAGES[form]
     pages = _extract([form_url, FEE_PAGE])
@@ -274,4 +301,9 @@ if __name__ == "__main__":
     import sys
 
     f = sys.argv[1] if len(sys.argv) > 1 else "i-765"
-    print(json.dumps(build_snapshot(f, use_cache=False).model_dump(), indent=2))
+    snap = build_snapshot(f, use_cache=False, allow_stale="--allow-stale" in sys.argv)
+    print(json.dumps(snap.model_dump(), indent=2))
+    if "--save-known" in sys.argv and not snap.stale:
+        KNOWN_DIR.mkdir(exist_ok=True)
+        (KNOWN_DIR / f"{f}.json").write_text(snap.model_dump_json(indent=2), encoding="utf-8")
+        print(f"saved packages/rules/known/{f}.json", file=sys.stderr)

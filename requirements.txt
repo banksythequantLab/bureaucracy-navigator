@@ -3,6 +3,7 @@ uvicorn[standard]>=0.30
 openai>=1.60
 tavily-python>=0.7
 pypdf>=5
+cryptography>=42   # USCIS PDFs are AES-encrypted (empty user password)
 pydantic>=2.7
 pyyaml>=6
 python-dotenv>=1.0
