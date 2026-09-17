@@ -29,6 +29,12 @@ uvicorn apps.api.app.main:app --reload
 # open http://127.0.0.1:8000/  ← bilingual web UI; "Load demo packet" jumps straight to the findings screen
 ```
 
+Deadline Sentinel runner (schedule daily with Task Scheduler / cron):
+
+```powershell
+python -m packages.agents.sentinel            # add --dry-run to print nudges instead of emailing
+```
+
 Then:
 
 ```powershell
@@ -75,15 +81,8 @@ tests/                    41 offline tests incl. real-PDF fill + read-back and a
 | 2 | Interview agent on I-765; pypdf fill of the official PDF; deterministic adjudicator core ✅ |
 | 3 | N-400 schema + PDF fill; web UI (EN/ES); known-snapshot fallback for all 3 forms ✅ — Spanish why/finding text + Nemotron phrasing pending keys |
 | 4 | I-130 schema + fill; full Spanish parity (why + findings, test-enforced); Nemotron adjudicator layer on top of deterministic checks ✅ |
-| 5 | Processing-time predictor; Deadline Sentinel (cases, cited deadlines, email runner); Docker; Devpost + video script ✅ |
+| 5 | Processing-time predictor; Deadline Sentinel (cases, cited deadlines, email runner); Devpost + video script ✅ |
 | 6 | Polish, 3-minute video, hosted demo, Devpost submission |
-
-## Run with Docker
-
-```bash
-cp .env.example .env            # add keys
-docker compose up --build       # API+UI on :8000, sentinel worker runs daily
-```
 
 ## License
 

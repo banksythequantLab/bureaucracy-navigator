@@ -46,7 +46,6 @@ _Nebius x NVIDIA Global AI Hackathon · deadline Oct 30 2026 10:00 PDT · Notion
 - [x] packages/agents/sentinel.py — Case store, 7 deadline rules with authorities (RFE 87-day default, EAD 180-day window + 540-day auto-extension, I-94, N-400 90-day window, outside-normal-processing, monthly Visa Bulletin), bilingual nudges (Nemotron rewrite optional), SMTP via env, 7-day throttle, `python -m packages.agents.sentinel [--dry-run]`
 - [x] API: /interview/{sid}/timeline, /interview/{sid}/sentinel, /sentinel/{cid} GET/DELETE, /sentinel/run
 - [x] UI: timeline card with editable filing date; Sentinel opt-in card → deadline list with urgency colors + delete
-- [x] Dockerfile + docker-compose.yml (api + daily sentinel worker, shared /data volume)
 - [x] docs/devpost.md (full submission draft) + docs/video-script.md (3-min shot list)
 - [x] E2E: I-765 ES → timeline (c)(8) 3.5–12 mo → sentinel 4 deadlines → runner dry-run emails 1 case
 - [x] 37/37 tests
@@ -80,7 +79,7 @@ _Nebius x NVIDIA Global AI Hackathon · deadline Oct 30 2026 10:00 PDT · Notion
 
 ## Next (Week 6)
 - [ ] Derek: review Spanish (packages/schemas/es/*.es.yaml, i-130.yaml, sentinel strings)
-- [ ] `docker compose up --build` on Vesper; pick a public host (VPS/Nebius VM) and put the URL in docs/devpost.md
+- [ ] pick a public host (Nebius VM / VPS): venv + uvicorn + daily sentinel via cron; put the URL in docs/devpost.md
 - [ ] Record the video per docs/video-script.md; submit on Devpost (deadline Oct 30 10:00 PDT)
 - [ ] Optional polish: N-400 remaining parts; Nemotron phrasing QA in Spanish
 - [ ] Re-run inspector when the 09/15/26 I-765 edition posts; diff field names

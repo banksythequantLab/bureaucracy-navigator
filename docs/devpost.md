@@ -22,7 +22,7 @@ Bureaucracy Navigator turns USCIS Forms I-765, N-400 and I-130 into a bilingual 
 - **Tavily Extract** is on the critical path: uscis.gov form pages, the G-1055 PDF (yes, Extract reads the PDF cleanly), the filing-address pages, processing-time pages. Search restricted to `uscis.gov`, `ecfr.gov`, `federalregister.gov`.
 - **Form schemas** (YAML, CC-BY-4.0): field → PDF widget → statute → risk rule, EN/ES, with `required_when` branching. This is the open-data contribution; it outlives the hackathon.
 - **pypdf** fills the AES-encrypted official PDFs; a field inspector diffs new editions in seconds.
-- FastAPI + a single-file bilingual web UI; Docker Compose with a sentinel worker.
+- FastAPI + a single-file bilingual web UI; the Deadline Sentinel is a plain daily runner (`python -m packages.agents.sentinel`).
 
 ## Challenges we ran into
 - The USCIS web fee page is a JS lookup with no static amounts; the G-1055 **PDF** is the authoritative schedule, and Tavily Extract turned out to read it well enough to parse per-form rows and even the I-765 "Appendix C" fee exceptions.
@@ -42,7 +42,7 @@ Live grounding is not a nice-to-have for government forms — fees, editions and
 Remaining N-400 parts (marital/children/employment/full GMC questionnaire), I-485 and I-864 (the natural companions), Haitian Creole and Chinese, a kiosk mode for libraries and legal-aid clinics, and a data feed so nonprofits can watch edition changes.
 
 ## Built with
-python · fastapi · nebius-token-factory · nvidia-nemotron · tavily · pypdf · pydantic · docker
+python · fastapi · nebius-token-factory · nvidia-nemotron · tavily · pypdf · pydantic
 
 ## Links
 - Repo: https://github.com/banksythequantLab/bureaucracy-navigator
