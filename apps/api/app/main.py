@@ -14,6 +14,7 @@ GET  /interview/{sid}/timeline      predicted processing window (live via Tavily
 POST /interview/{sid}/sentinel      opt in to deadline watch → case + computed deadlines
 GET  /sentinel/{cid} · DELETE       view / delete a case
 POST /sentinel/run                  run the notifier (dry_run=true by default)
+POST /interview/demo/{form}         seed a deliberately flawed sample packet (video / judges)
 """
 from __future__ import annotations
 
@@ -26,7 +27,7 @@ from fastapi import FastAPI, HTTPException, Response
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
-from packages.agents import adjudicator
+from packages.agents import adjudicator, cache
 from packages.agents import interview as iv
 from packages.agents import nebius
 from packages.forms.fill import fill_pdf
@@ -112,7 +113,8 @@ def explain(form: str, field_id: str, req: ExplainRequest) -> ExplainResponse:
         f"Authorities: {'; '.join(field.cite) or 'none'}"
     )
     try:
-        text = nebius.chat(system, user, model=nebius.FAST_MODEL)
+        text = cache.cached(lambda: nebius.chat(system, user, model=nebius.FAST_MODEL),
+                            "explain", nebius.FAST_MODEL, req.lang, req.reading_level, form, field.id, field.why_en or "")
     except nebius.MissingKeyError as e:
         raise HTTPException(503, str(e)) from e
     return ExplainResponse(
@@ -308,3 +310,29 @@ def sentinel_delete(cid: str) -> dict:
 def sentinel_run(dry_run: bool = True) -> list[dict]:
     """Manual trigger for the runner (cron calls `python -m packages.agents.sentinel`)."""
     return sentinel.run_once(dry_run=dry_run)
+
+
+# ----------------------------------------------------------------- demo mode
+import json as _json  # noqa: E402
+
+FIXTURES = {"i-765": "tests/fixtures/i765_answers.json", "n-400": "tests/fixtures/n400_answers.json", "i-130": "tests/fixtures/i130_answers.json"}
+
+
+@app.post("/interview/demo/{form}", response_model=InterviewState)
+def interview_demo(form: str, lang: Literal["en", "es"] = "es") -> InterviewState:
+    """Seed a session from the test fixture (a deliberately flawed packet) and jump to the findings screen.
+    Used by the demo button and the video; answers are the same JSON the tests assert against."""
+    if form not in FIXTURES:
+        raise HTTPException(404, f"no demo fixture for {form}")
+    answers = _json.loads(Path(FIXTURES[form]).read_text(encoding="utf-8"))
+    s = iv.start(form, lang)
+    schema = load_schema(form)
+    for f in schema.all_fields():
+        if f.id in answers and answers[f.id] not in (None, "", []):
+            s.answers[f.id] = answers[f.id]
+    # skip whatever the fixture leaves blank so the interview reads as complete
+    for f in schema.all_fields():
+        if f.id not in s.answers:
+            s.skipped.append(f.id)
+    s.save()
+    return _state(s)

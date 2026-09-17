@@ -20,7 +20,7 @@ from typing import Any, Literal, Optional
 
 from pydantic import BaseModel, Field
 
-from packages.agents import nebius
+from packages.agents import cache, nebius
 from packages.rules.checks import evaluate
 from packages.schemas.loader import FieldDef, FormSchema, load_schema
 
@@ -105,12 +105,10 @@ def phrase(field: FieldDef, lang: Lang, answers: dict[str, Any]) -> str:
         "no eligibility predictions. If the item has options, list them briefly in natural words "
         "(e.g. 'wet ink' not 'wet_ink'); the applicant will answer in words and we map them back."
     )
-    user = (
-        f"Item label: {label}\nType: {field.type}\nOptions: {field.options or 'n/a'}\n"
-        f"Already known about the applicant: {json.dumps({k: v for k, v in answers.items() if k in ('reason', 'category')})}"
-    )
+    user = f"Item label: {label}\nType: {field.type}\nOptions: {field.options or 'n/a'}"
     try:
-        return nebius.chat(system, user, model=nebius.FAST_MODEL, temperature=0.3).strip() or label
+        return cache.cached(lambda: nebius.chat(system, user, model=nebius.FAST_MODEL, temperature=0.3).strip(),
+                            "phrase", nebius.FAST_MODEL, lang, field.id, label, str(field.options)) or label
     except Exception:  # noqa: BLE001
         return label
 

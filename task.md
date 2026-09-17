@@ -59,6 +59,11 @@ _Nebius x NVIDIA Global AI Hackathon · deadline Oct 30 2026 10:00 PDT · Notion
 - [x] Model findings that landed: missing I-589 receipt evidence for (c)(8), interpreter Part 4 unsigned (I-765); missing lawful-entry evidence + conditional-residence note (I-130) — all cited, all correct
 - [x] UI tags model findings "· Nemotron"; E2E with key: model_used=true, 5 findings (2 from Nemotron)
 
+## Done 2026-09-17 — demo mode + cache
+- [x] POST /interview/demo/{form}?lang= seeds the flawed fixture packet; header button "Load demo packet / Cargar paquete de ejemplo"
+- [x] packages/agents/cache.py — disk cache for phrasing + /explain keyed on model+lang+field text; interview 50 s cold → 2 s warm, explain 1.6 s → 0.03 s
+- [x] 39/39 tests
+
 ## Blockers
 - [ ] TAVILY_API_KEY — keyless monthly limit was hit during dev; live snapshots intermittent until a key is set
 - [ ] Devpost rules: one team, two entries?

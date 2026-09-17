@@ -26,7 +26,7 @@ pip install -r requirements.txt
 Copy-Item .env.example .env   # then paste NEBIUS_API_KEY (and TAVILY_API_KEY)
 pytest -q                     # offline tests, no keys needed
 uvicorn apps.api.app.main:app --reload
-# open http://127.0.0.1:8000/  ← bilingual web UI (rule card → interview → rejection simulator → PDF)
+# open http://127.0.0.1:8000/  ← bilingual web UI; "Load demo packet" jumps straight to the findings screen
 ```
 
 Then:
@@ -61,9 +61,10 @@ packages/agents/adjudicator Nemotron review: adds cited cross-field findings; ca
 packages/schemas/es/      Spanish sidecars (why + finding text) merged at load; tests enforce 100% coverage
 packages/forms/           official USCIS PDFs, AcroForm inspector, answers→field maps, pypdf filler
 packages/rules/timeline   processing-time predictor (Tavily live, committed Sep-2026 table as stale fallback)
+packages/agents/cache     disk cache for phrasing + explanations (repeat interview 50 s → 2 s)
 packages/agents/sentinel  Deadline Sentinel: opt-in case, cited deadline rules, 7-day-throttled email runner
 docs/                     Devpost draft, 3-minute video script
-tests/                    37 offline tests incl. real-PDF fill + read-back and a seeded bad packet
+tests/                    39 offline tests incl. real-PDF fill + read-back and a seeded bad packet
 ```
 
 ## Roadmap

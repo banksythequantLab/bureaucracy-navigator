@@ -50,6 +50,7 @@
   <select id="form"><option value="i-765">I-765 · Work permit / Permiso de trabajo</option><option value="n-400">N-400 · Naturalization / Naturalización</option><option value="i-130">I-130 · Relative petition / Petición familiar</option></select>
   <select id="lang"><option value="en">English</option><option value="es">Español</option></select>
   <button id="start"></button>
+  <button id="demo" title="Seed a deliberately flawed sample packet"></button>
 </header>
 <main>
   <section class="card" id="rulecard">
@@ -106,7 +107,7 @@ const T = {
         time:"Predicted processing time", range:"Posted range", earliest:"Earliest decision", latest:"Outside normal time after", filed:"Filing date (YYYY-MM-DD)",
         sent:"Deadline Sentinel", sentblurb:"Opt in and we compute every clock that matters and email you when one is close. Delete anytime.", sentgo:"Watch my deadlines",
         email:"Email (optional)", ead_expires:"Current EAD expires (I-765 renewals)", i94_expires:"I-94 expires", rfe_received_on:"RFE received on", priority_date:"Priority date (I-130)",
-        urg:{overdue:"Overdue", now:"This week", soon:"Soon", later:"Later"}, days:"days",
+        urg:{overdue:"Overdue", now:"This week", soon:"Soon", later:"Later"}, days:"days", demo:"Load demo packet",
         foot:"This tool explains and checks forms. It is not legal advice. Open source · Nebius Token Factory + NVIDIA Nemotron + Tavily." },
   es: { start:"Comenzar entrevista", rules:"Verificado hoy en uscis.gov", edition:"Edición(es) aceptada(s)", alert:"Nueva edición anunciada", paper:"Tarifa · papel", online:"Tarifa · en línea",
         addresses:"Dónde presentar", live:"en vivo", stale:"última verificación", submit:"Siguiente", skip:"Omitir (opcional)", why:"¿Por qué existe este campo?", check:"Simulador de rechazo",
@@ -117,7 +118,7 @@ const T = {
         time:"Tiempo de procesamiento previsto", range:"Rango publicado", earliest:"Decisión más temprana", latest:"Fuera del tiempo normal después de", filed:"Fecha de presentación (AAAA-MM-DD)",
         sent:"Vigilante de plazos", sentblurb:"Active la vigilancia y calculamos cada plazo que importa y le avisamos por correo cuando uno se acerque. Bórrelo cuando quiera.", sentgo:"Vigilar mis plazos",
         email:"Correo (opcional)", ead_expires:"Vence el EAD actual (renovaciones I-765)", i94_expires:"Vence el I-94", rfe_received_on:"RFE recibido el", priority_date:"Fecha de prioridad (I-130)",
-        urg:{overdue:"Vencido", now:"Esta semana", soon:"Pronto", later:"Más adelante"}, days:"días",
+        urg:{overdue:"Vencido", now:"Esta semana", soon:"Pronto", later:"Más adelante"}, days:"días", demo:"Cargar paquete de ejemplo",
         foot:"Esta herramienta explica y revisa formularios. No es asesoría legal. Código abierto · Nebius Token Factory + NVIDIA Nemotron + Tavily." }
 };
 const $ = id => document.getElementById(id);
@@ -129,7 +130,7 @@ function applyLang() {
   $("start").textContent = t("start"); $("t-rules").textContent = t("rules"); $("submit").textContent = t("submit");
   $("skip").textContent = t("skip"); $("t-why").textContent = t("why"); $("t-check").textContent = t("check");
   $("download").textContent = t("download"); $("recheck").textContent = t("recheck"); $("foot").textContent = t("foot");
-  $("t-time").textContent = t("time"); $("t-sent").textContent = t("sent"); $("sentblurb").textContent = t("sentblurb"); $("sentgo").textContent = t("sentgo");
+  $("demo").textContent = t("demo"); $("t-time").textContent = t("time"); $("t-sent").textContent = t("sent"); $("sentblurb").textContent = t("sentblurb"); $("sentgo").textContent = t("sentgo");
 }
 
 async function api(path, opts) {
@@ -264,6 +265,7 @@ $("sentgo").onclick = async () => {
 $("lang").onchange = () => { applyLang(); loadRules(); if (state) render(); };
 $("form").onchange = loadRules;
 $("start").onclick = async () => { state = await api("/interview/start", { method: "POST", body: JSON.stringify({ form: $("form").value, lang }) }); sid = state.session_id; render(); };
+$("demo").onclick = async () => { state = await api(`/interview/demo/${$("form").value}?lang=${lang}`, { method: "POST" }); sid = state.session_id; render(); };
 $("submit").onclick = () => submit();
 $("skip").onclick = async () => { state = await api(`/interview/${sid}/answer`, { method: "POST", body: JSON.stringify({ field_id: state.question.field_id, skip: true }) }); render(); };
 $("download").onclick = () => window.open(`/interview/${sid}/fill`, "_blank");
