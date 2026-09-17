@@ -51,14 +51,20 @@ _Nebius x NVIDIA Global AI Hackathon · deadline Oct 30 2026 10:00 PDT · Notion
 - [x] E2E: I-765 ES → timeline (c)(8) 3.5–12 mo → sentinel 4 deadlines → runner dry-run emails 1 case
 - [x] 37/37 tests
 
+## Done 2026-09-17 — Nebius key live
+- [x] Key validated against Token Factory; 17 models listed; Nano ID corrected to `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B` (Super ID was right)
+- [x] .env written on Vesper (gitignored, never synced/committed); .env.example rewritten with verified IDs + SMTP + dirs
+- [x] Live: interview phrasing (35 Qs ES in 72 s), free-text parsing (Spanish double surnames fixed via prompt), /explain ES, adjudicator on all 3 fixtures (Super 120B, 15–22 s), sentinel nudge rewrite (Nano)
+- [x] Adjudicator prompt tuned from real output: planned signature_date not flagged; `_attached` = checklist; day-count tolerance 60 d
+- [x] Model findings that landed: missing I-589 receipt evidence for (c)(8), interpreter Part 4 unsigned (I-765); missing lawful-entry evidence + conditional-residence note (I-130) — all cited, all correct
+- [x] UI tags model findings "· Nemotron"; E2E with key: model_used=true, 5 findings (2 from Nemotron)
+
 ## Blockers
-- [ ] NEBIUS_API_KEY not yet created → phrase/parse/explain fall back to labels (works, just not conversational)
 - [ ] TAVILY_API_KEY — keyless monthly limit was hit during dev; live snapshots intermittent until a key is set
-- [ ] Confirm Nemotron 3 Nano model ID in Token Factory console
 - [ ] Devpost rules: one team, two entries?
 
 ## Next (Week 6)
-- [ ] Keys → .env; run adjudicator on the three fixtures; tune SYSTEM prompt; confirm Nano model id
+- [ ] TAVILY_API_KEY → .env (last live-vs-stale gap)
 - [ ] Derek: review Spanish (packages/schemas/es/*.es.yaml, i-130.yaml, sentinel strings)
 - [ ] `docker compose up --build` on Vesper; pick a public host (VPS/Nebius VM) and put the URL in docs/devpost.md
 - [ ] Record the video per docs/video-script.md; submit on Devpost (deadline Oct 30 10:00 PDT)

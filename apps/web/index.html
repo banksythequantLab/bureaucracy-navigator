@@ -224,7 +224,7 @@ async function runCheck() {
   const sev = T[lang].sev;
   $("counts").innerHTML = Object.entries(c.counts).map(([k, n]) => `<span class="${k}">${sev[k] || k}: ${n}</span>`).join("")
     + (c.snapshot_stale ? ` <span class="badge stale">${t("stale")} ${(c.snapshot_fetched_at||"").slice(0,10)}</span>` : "");
-  $("findings").innerHTML = c.findings.length ? c.findings.map(f => `<div class="find ${f.severity}"><div class="sev">${sev[f.severity] || f.severity}${f.field ? " · " + f.field : ""}</div><div>${lang === "es" && f.text_es ? f.text_es : f.text_en}</div><div class="cite">${(f.cite || []).join(" · ")}</div></div>`).join("")
+  $("findings").innerHTML = c.findings.length ? c.findings.map(f => `<div class="find ${f.severity}"><div class="sev">${sev[f.severity] || f.severity}${f.field ? " · " + f.field : ""}${f.source === "model" ? " · Nemotron" : ""}</div><div>${lang === "es" && f.text_es ? f.text_es : f.text_en}</div><div class="cite">${(f.cite || []).join(" · ")}</div></div>`).join("")
     : `<div class="find info">${t("clean")}</div>`;
   $("disc").textContent = (c.model_note ? c.model_note + " — " : "") + c.disclaimer + (c.model_used ? " · Nemotron review ✓" : "");
   loadTimeline(); showSentinel();

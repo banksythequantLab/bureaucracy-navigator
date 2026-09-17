@@ -102,7 +102,8 @@ def phrase(field: FieldDef, lang: Lang, answers: dict[str, Any]) -> str:
     system = (
         f"You are a calm, plain-language interviewer helping someone complete USCIS Form. "
         f"Ask exactly ONE question in {lang_name}, one or two sentences, no legal advice, "
-        "no eligibility predictions. If the item has options, list them briefly."
+        "no eligibility predictions. If the item has options, list them briefly in natural words "
+        "(e.g. 'wet ink' not 'wet_ink'); the applicant will answer in words and we map them back."
     )
     user = (
         f"Item label: {label}\nType: {field.type}\nOptions: {field.options or 'n/a'}\n"
@@ -170,7 +171,8 @@ def parse(field: FieldDef, raw: Any, lang: Lang) -> Any:
     # Composite or ambiguous → ask the model if we can, else return raw text
     if os.getenv("NEBIUS_API_KEY"):
         try:
-            system = ("Extract the answer into JSON. Types: name→{family,given,middle}; "
+            system = ("Extract the answer into JSON. Types: name→{family,given,middle} — for Spanish/Portuguese names, "
+                      "BOTH surnames go in family (e.g. 'María Luisa Pérez Gómez' → family 'Pérez Gómez', given 'María', middle 'Luisa'); "
                       "address→{in_care_of,street,unit_type(apt|ste|flr|''),unit,city,state(2-letter),zip}; "
                       "place→{city,state,country}; passport→{number,country,expires(YYYY-MM-DD)}; "
                       "list→[...]; bool→true/false; date→YYYY-MM-DD; choice→one of the options exactly. "

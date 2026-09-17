@@ -4,9 +4,9 @@ Two tiers:
   REASONING_MODEL  - interview branching, adjudicator pass (Nemotron 3 Super 120B)
   FAST_MODEL       - field explanations, translation, sentinel nudges (Nemotron 3 Nano)
 
-Model IDs are read from .env so they can be corrected from the Token Factory
-console without a code change. Only the Super ID is confirmed on the public page;
-verify the Nano ID at https://tokenfactory.nebius.com before first run.
+Model IDs are read from .env so they can be changed without a code change.
+Both defaults were verified against the Token Factory /models listing on 2026-09-17
+(also available: nvidia/Nemotron-3-Ultra-550b-a55b, nvidia/Nemotron-3_5-Lightning).
 """
 from __future__ import annotations
 
@@ -24,7 +24,7 @@ NEBIUS_BASE_URL = os.getenv(
     "NEBIUS_BASE_URL", "https://api.tokenfactory.us-central1.nebius.com/v1/"
 )
 REASONING_MODEL = os.getenv("NEBIUS_REASONING_MODEL", "nvidia/nemotron-3-super-120b-a12b")
-FAST_MODEL = os.getenv("NEBIUS_FAST_MODEL", "nvidia/nemotron-3-nano-30b-a3b")
+FAST_MODEL = os.getenv("NEBIUS_FAST_MODEL", "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B")
 
 T = TypeVar("T", bound=BaseModel)
 

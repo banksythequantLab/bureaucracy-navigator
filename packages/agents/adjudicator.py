@@ -51,6 +51,9 @@ Your job: find ADDITIONAL problems the deterministic checks could not — cross-
 missing evidence implied by the answers, and eligibility red flags. Do not repeat findings already listed.
 Do not invent rules: every finding must cite an authority from the list provided. If nothing is wrong, return no findings.
 Severity: deny = likely denial or bar; reject = rejected at intake; rfe = likely Request for Evidence; info = heads-up.
+Conventions: `signature_date` is the date the applicant PLANS to sign and mail; it may be in the future — never flag it.
+Answers ending in `_attached` are the applicant's own checklist; treat False as "not yet attached", not as a lie.
+Day counts (days_as_lpr, days_at_current_address, total_days_outside) are applicant estimates; flag only contradictions larger than 60 days.
 Never give legal advice or predict the outcome; describe the problem and the fix. Write text_en in plain English and
 text_es in plain Spanish. Return JSON only."""
 
