@@ -7,3 +7,5 @@ __pycache__/
 node_modules/
 .next/
 *.filled.pdf
+.secrets/
+*.sa.json
