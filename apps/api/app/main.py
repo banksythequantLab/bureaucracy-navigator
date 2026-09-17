@@ -10,6 +10,10 @@ GET  /interview/{sid}               state + next question + progress
 POST /interview/{sid}/answer        {field_id, value | skip} → next question
 POST /interview/{sid}/check         deterministic findings (+ live snapshot)
 GET  /interview/{sid}/fill          filled official PDF (signature never filled)
+GET  /interview/{sid}/timeline      predicted processing window (live via Tavily, else committed table)
+POST /interview/{sid}/sentinel      opt in to deadline watch → case + computed deadlines
+GET  /sentinel/{cid} · DELETE       view / delete a case
+POST /sentinel/run                  run the notifier (dry_run=true by default)
 """
 from __future__ import annotations
 
@@ -231,3 +235,76 @@ def interview_fill(sid: str) -> Response:
         raise HTTPException(500, str(e)) from e
     return Response(content=data, media_type="application/pdf",
                     headers={"Content-Disposition": f'attachment; filename="{s.form}-{s.id}.pdf"'})
+
+
+# ----------------------------------------------------------------- timeline + sentinel
+from packages.agents import sentinel  # noqa: E402
+from packages.rules.timeline import Timeline, predict  # noqa: E402
+
+
+@app.get("/interview/{sid}/timeline", response_model=Timeline)
+def interview_timeline(sid: str, filed_on: str | None = None) -> Timeline:
+    s = _session(sid)
+    return predict(s.form, s.answers, filed_on)
+
+
+class SentinelOptIn(BaseModel):
+    email: str | None = None
+    filed_on: str | None = None
+    receipt_number: str | None = None
+    ead_expires: str | None = None
+    i94_expires: str | None = None
+    rfe_received_on: str | None = None
+    rfe_due_on: str | None = None
+    lpr_since: str | None = None
+    basis: str | None = None
+    priority_date: str | None = None
+
+
+class SentinelCase(BaseModel):
+    case_id: str
+    form: str
+    lang: str
+    deadlines: list[sentinel.Deadline]
+
+
+def _case_view(c: sentinel.Case) -> SentinelCase:
+    return SentinelCase(case_id=c.id, form=c.form, lang=c.lang, deadlines=sentinel.compute_deadlines(c))
+
+
+@app.post("/interview/{sid}/sentinel", response_model=SentinelCase)
+def sentinel_optin(sid: str, req: SentinelOptIn) -> SentinelCase:
+    """Create an opt-in deadline-watch case from an interview. Dates that the interview already knows are pre-filled."""
+    s = _session(sid)
+    a = s.answers
+    fields = req.model_dump(exclude_none=True)
+    fields.setdefault("lpr_since", a.get("lpr_date"))
+    fields.setdefault("basis", a.get("basis"))
+    if s.form == "i-765" and a.get("days_until_ead_expiry") and not fields.get("ead_expires"):
+        from datetime import date, timedelta
+        fields["ead_expires"] = (date.today() + timedelta(days=int(a["days_until_ead_expiry"]))).isoformat()
+    c = sentinel.new_case(s.form, s.lang, answers=a, **{k: v for k, v in fields.items() if v is not None})
+    return _case_view(c)
+
+
+@app.get("/sentinel/{cid}", response_model=SentinelCase)
+def sentinel_get(cid: str) -> SentinelCase:
+    try:
+        return _case_view(sentinel.Case.load(cid))
+    except KeyError as e:
+        raise HTTPException(404, f"no case {cid}") from e
+
+
+@app.delete("/sentinel/{cid}")
+def sentinel_delete(cid: str) -> dict:
+    try:
+        sentinel.Case.load(cid).delete()
+    except KeyError as e:
+        raise HTTPException(404, f"no case {cid}") from e
+    return {"deleted": cid}
+
+
+@app.post("/sentinel/run")
+def sentinel_run(dry_run: bool = True) -> list[dict]:
+    """Manual trigger for the runner (cron calls `python -m packages.agents.sentinel`)."""
+    return sentinel.run_once(dry_run=dry_run)

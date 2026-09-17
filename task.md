@@ -41,16 +41,26 @@ _Nebius x NVIDIA Global AI Hackathon · deadline Oct 30 2026 10:00 PDT · Notion
 - [x] E2E I-130 in Spanish: 41 Qs → reject×3 (online+concurrent, wrong lockbox, $675 vs $625 online) + rfe×1
 - [x] 33/33 tests
 
+## Done 2026-09-17 — Week 5 (ahead of schedule)
+- [x] packages/rules/timeline.py + known/processing_times.json — per-form/category ranges (Sep 2026 table), earliest/latest/inquiry dates from filing date; Tavily live path when key exists
+- [x] packages/agents/sentinel.py — Case store, 7 deadline rules with authorities (RFE 87-day default, EAD 180-day window + 540-day auto-extension, I-94, N-400 90-day window, outside-normal-processing, monthly Visa Bulletin), bilingual nudges (Nemotron rewrite optional), SMTP via env, 7-day throttle, `python -m packages.agents.sentinel [--dry-run]`
+- [x] API: /interview/{sid}/timeline, /interview/{sid}/sentinel, /sentinel/{cid} GET/DELETE, /sentinel/run
+- [x] UI: timeline card with editable filing date; Sentinel opt-in card → deadline list with urgency colors + delete
+- [x] Dockerfile + docker-compose.yml (api + daily sentinel worker, shared /data volume)
+- [x] docs/devpost.md (full submission draft) + docs/video-script.md (3-min shot list)
+- [x] E2E: I-765 ES → timeline (c)(8) 3.5–12 mo → sentinel 4 deadlines → runner dry-run emails 1 case
+- [x] 37/37 tests
+
 ## Blockers
 - [ ] NEBIUS_API_KEY not yet created → phrase/parse/explain fall back to labels (works, just not conversational)
 - [ ] TAVILY_API_KEY — keyless monthly limit was hit during dev; live snapshots intermittent until a key is set
 - [ ] Confirm Nemotron 3 Nano model ID in Token Factory console
 - [ ] Devpost rules: one team, two entries?
 
-## Next (Week 5)
-- [ ] Derek: review Spanish sidecars (legal register) — packages/schemas/es/*.es.yaml + i-130.yaml inline
-- [ ] With NEBIUS_API_KEY: exercise adjudicator on the three fixtures; tune SYSTEM prompt; confirm Nano model id
-- [ ] Processing-time predictor (Tavily Extract on egov.uscis.gov) + Deadline Sentinel (cron, email via Banksy stack)
-- [ ] Deploy demo (Vercel FE + Nebius/VPS BE) and write the 3-min video script
-- [ ] Devpost page draft
+## Next (Week 6)
+- [ ] Keys → .env; run adjudicator on the three fixtures; tune SYSTEM prompt; confirm Nano model id
+- [ ] Derek: review Spanish (packages/schemas/es/*.es.yaml, i-130.yaml, sentinel strings)
+- [ ] `docker compose up --build` on Vesper; pick a public host (VPS/Nebius VM) and put the URL in docs/devpost.md
+- [ ] Record the video per docs/video-script.md; submit on Devpost (deadline Oct 30 10:00 PDT)
+- [ ] Optional polish: N-400 remaining parts; Nemotron phrasing QA in Spanish
 - [ ] Re-run inspector when the 09/15/26 I-765 edition posts; diff field names

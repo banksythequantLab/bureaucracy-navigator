@@ -1,0 +1,25 @@
+{
+  "as_of": "2026-09-01",
+  "source": "https://manifestlaw.com/blog/uscis-processing-times (compiled from egov.uscis.gov/processing-times, updated Sep 1 2026)",
+  "note": "USCIS publishes the 80th-percentile time per form/category/office; egov.uscis.gov is JS-rendered, so the live path uses Tavily Extract and falls back to this table (flagged stale).",
+  "forms": {
+    "i-765": {
+      "default": {"min_months": 3.5, "max_months": 19, "label": "All categories (range across offices)"},
+      "(c)(8)": {"min_months": 3.5, "max_months": 12, "label": "Asylum applicant — initial/renewal"},
+      "(c)(9)": {"min_months": 3.5, "max_months": 19, "label": "Adjustment applicant"},
+      "(a)(12)": {"min_months": 3.5, "max_months": 9, "label": "TPS"}
+    },
+    "n-400": {
+      "default": {"min_months": 8, "max_months": 17.5, "label": "All field offices"}
+    },
+    "i-130": {
+      "default": {"min_months": 24, "max_months": 80, "label": "Immediate relative of U.S. citizen"},
+      "usc:spouse": {"min_months": 24, "max_months": 80, "label": "IR — spouse of U.S. citizen"},
+      "usc:parent": {"min_months": 24, "max_months": 80, "label": "IR — parent of U.S. citizen"},
+      "usc:child": {"min_months": 24, "max_months": 80, "label": "IR — unmarried child under 21 of U.S. citizen"},
+      "usc:sibling": {"min_months": 58.5, "max_months": 286.5, "label": "F4 — sibling of U.S. citizen"},
+      "lpr:spouse": {"min_months": 45, "max_months": 167, "label": "F2A — spouse of permanent resident"},
+      "lpr:child": {"min_months": 45, "max_months": 167, "label": "F2A — child under 21 of permanent resident"}
+    }
+  }
+}

@@ -60,7 +60,10 @@ packages/agents/interview deterministic question order; Nemotron phrases questio
 packages/agents/adjudicator Nemotron review: adds cited cross-field findings; can never remove or downgrade a deterministic one
 packages/schemas/es/      Spanish sidecars (why + finding text) merged at load; tests enforce 100% coverage
 packages/forms/           official USCIS PDFs, AcroForm inspector, answers→field maps, pypdf filler
-tests/                    33 offline tests incl. real-PDF fill + read-back and a seeded bad packet
+packages/rules/timeline   processing-time predictor (Tavily live, committed Sep-2026 table as stale fallback)
+packages/agents/sentinel  Deadline Sentinel: opt-in case, cited deadline rules, 7-day-throttled email runner
+docs/                     Devpost draft, 3-minute video script
+tests/                    37 offline tests incl. real-PDF fill + read-back and a seeded bad packet
 ```
 
 ## Roadmap
@@ -71,8 +74,15 @@ tests/                    33 offline tests incl. real-PDF fill + read-back and a
 | 2 | Interview agent on I-765; pypdf fill of the official PDF; deterministic adjudicator core ✅ |
 | 3 | N-400 schema + PDF fill; web UI (EN/ES); known-snapshot fallback for all 3 forms ✅ — Spanish why/finding text + Nemotron phrasing pending keys |
 | 4 | I-130 schema + fill; full Spanish parity (why + findings, test-enforced); Nemotron adjudicator layer on top of deterministic checks ✅ |
-| 5 | Processing-time predictor; Deadline Sentinel |
+| 5 | Processing-time predictor; Deadline Sentinel (cases, cited deadlines, email runner); Docker; Devpost + video script ✅ |
 | 6 | Polish, 3-minute video, hosted demo, Devpost submission |
+
+## Run with Docker
+
+```bash
+cp .env.example .env            # add keys
+docker compose up --build       # API+UI on :8000, sentinel worker runs daily
+```
 
 ## License
 
