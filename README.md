@@ -25,8 +25,8 @@ python -m venv .venv; .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 Copy-Item .env.example .env   # then paste NEBIUS_API_KEY (and TAVILY_API_KEY)
 pytest -q                     # offline tests, no keys needed
-uvicorn apps.api.app.main:app --reload
-# open http://127.0.0.1:8000/  ← bilingual web UI; "Load demo packet" jumps straight to the findings screen
+uvicorn apps.api.app.main:app --reload --port 8765
+# open http://127.0.0.1:8765/  ← bilingual web UI; "Load demo packet" jumps straight to the findings screen
 ```
 
 Deadline Sentinel runner (schedule daily with Task Scheduler / cron):
@@ -38,16 +38,16 @@ python -m packages.agents.sentinel            # add --dry-run to print nudges in
 Then:
 
 ```powershell
-curl http://127.0.0.1:8000/health
-curl http://127.0.0.1:8000/rules/i-765          # live from uscis.gov via Tavily
-curl http://127.0.0.1:8000/forms/i-765          # schema with why + cites + risks
-curl -X POST http://127.0.0.1:8000/explain/i-765/category -H "content-type: application/json" -d "{\"lang\":\"es\"}"
+curl http://127.0.0.1:8765/health
+curl http://127.0.0.1:8765/rules/i-765          # live from uscis.gov via Tavily
+curl http://127.0.0.1:8765/forms/i-765          # schema with why + cites + risks
+curl -X POST http://127.0.0.1:8765/explain/i-765/category -H "content-type: application/json" -d "{\"lang\":\"es\"}"
 
 # Interview → check → fill (works offline; Nemotron only phrases/parses when NEBIUS_API_KEY is set)
-curl -X POST http://127.0.0.1:8000/interview/start -H "content-type: application/json" -d "{\"form\":\"i-765\",\"lang\":\"es\"}"
-curl -X POST http://127.0.0.1:8000/interview/<sid>/answer -H "content-type: application/json" -d "{\"field_id\":\"reason\",\"value\":\"renewal\"}"
-curl -X POST http://127.0.0.1:8000/interview/<sid>/check      # deny / reject / rfe / info findings, cited
-curl -o i-765.filled.pdf http://127.0.0.1:8000/interview/<sid>/fill
+curl -X POST http://127.0.0.1:8765/interview/start -H "content-type: application/json" -d "{\"form\":\"i-765\",\"lang\":\"es\"}"
+curl -X POST http://127.0.0.1:8765/interview/<sid>/answer -H "content-type: application/json" -d "{\"field_id\":\"reason\",\"value\":\"renewal\"}"
+curl -X POST http://127.0.0.1:8765/interview/<sid>/check      # deny / reject / rfe / info findings, cited
+curl -o i-765.filled.pdf http://127.0.0.1:8765/interview/<sid>/fill
 ```
 
 The filler never writes the signature field: the official PDF says it "can not be signed electronically", and a typed name there is a denial trigger under the July 2026 signature rule.
