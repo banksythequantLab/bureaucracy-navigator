@@ -25,8 +25,8 @@ python -m venv .venv; .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 Copy-Item .env.example .env   # then paste NEBIUS_API_KEY (and TAVILY_API_KEY)
 pytest -q                     # offline tests, no keys needed
-uvicorn apps.api.app.main:app --reload --port 8765
-# open http://127.0.0.1:8765/  ← bilingual web UI; "Load demo packet" jumps straight to the findings screen
+uvicorn apps.api.app.main:app --reload --port 8791
+# open http://127.0.0.1:8791/  ← bilingual web UI; "Load demo packet" jumps straight to the findings screen
 ```
 
 Deadline Sentinel runner (schedule daily with Task Scheduler / cron):
@@ -38,16 +38,16 @@ python -m packages.agents.sentinel            # add --dry-run to print nudges in
 Then:
 
 ```powershell
-curl http://127.0.0.1:8765/health
-curl http://127.0.0.1:8765/rules/i-765          # live from uscis.gov via Tavily
-curl http://127.0.0.1:8765/forms/i-765          # schema with why + cites + risks
-curl -X POST http://127.0.0.1:8765/explain/i-765/category -H "content-type: application/json" -d "{\"lang\":\"es\"}"
+curl http://127.0.0.1:8791/health
+curl http://127.0.0.1:8791/rules/i-765          # live from uscis.gov via Tavily
+curl http://127.0.0.1:8791/forms/i-765          # schema with why + cites + risks
+curl -X POST http://127.0.0.1:8791/explain/i-765/category -H "content-type: application/json" -d "{\"lang\":\"es\"}"
 
 # Interview → check → fill (works offline; Nemotron only phrases/parses when NEBIUS_API_KEY is set)
-curl -X POST http://127.0.0.1:8765/interview/start -H "content-type: application/json" -d "{\"form\":\"i-765\",\"lang\":\"es\"}"
-curl -X POST http://127.0.0.1:8765/interview/<sid>/answer -H "content-type: application/json" -d "{\"field_id\":\"reason\",\"value\":\"renewal\"}"
-curl -X POST http://127.0.0.1:8765/interview/<sid>/check      # deny / reject / rfe / info findings, cited
-curl -o i-765.filled.pdf http://127.0.0.1:8765/interview/<sid>/fill
+curl -X POST http://127.0.0.1:8791/interview/start -H "content-type: application/json" -d "{\"form\":\"i-765\",\"lang\":\"es\"}"
+curl -X POST http://127.0.0.1:8791/interview/<sid>/answer -H "content-type: application/json" -d "{\"field_id\":\"reason\",\"value\":\"renewal\"}"
+curl -X POST http://127.0.0.1:8791/interview/<sid>/check      # deny / reject / rfe / info findings, cited
+curl -o i-765.filled.pdf http://127.0.0.1:8791/interview/<sid>/fill
 ```
 
 The filler never writes the signature field: the official PDF says it "can not be signed electronically", and a typed name there is a denial trigger under the July 2026 signature rule.
@@ -83,6 +83,33 @@ tests/                    41 offline tests incl. real-PDF fill + read-back and a
 | 4 | I-130 schema + fill; full Spanish parity (why + findings, test-enforced); Nemotron adjudicator layer on top of deterministic checks ✅ |
 | 5 | Processing-time predictor; Deadline Sentinel (cases, cited deadlines, email runner); Devpost + video script ✅ |
 | 6 | Polish, 3-minute video, hosted demo, Devpost submission |
+
+## Deploy (Ubuntu VM)
+
+```bash
+sudo apt-get install -y python3-venv git
+git clone https://github.com/banksythequantLab/bureaucracy-navigator.git ~/bn && cd ~/bn
+python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+cp .env.example .env && nano .env                      # NEBIUS_API_KEY, TAVILY_API_KEY, SMTP_*
+sudo tee /etc/systemd/system/bn.service >/dev/null <<EOT
+[Unit]
+Description=Bureaucracy Navigator
+After=network.target
+[Service]
+User=$USER
+WorkingDirectory=$HOME/bn
+EnvironmentFile=$HOME/bn/.env
+ExecStart=$HOME/bn/.venv/bin/uvicorn apps.api.app.main:app --host 0.0.0.0 --port 8791
+Restart=always
+[Install]
+WantedBy=multi-user.target
+EOT
+sudo systemctl enable --now bn
+(crontab -l 2>/dev/null; echo "15 9 * * * cd $HOME/bn && .venv/bin/python -m packages.agents.sentinel") | crontab -
+curl -s localhost:8791/health
+```
+
+Open port 8791 in the VM's security group.
 
 ## License
 

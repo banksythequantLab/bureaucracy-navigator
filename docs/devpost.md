@@ -46,7 +46,7 @@ python · fastapi · nebius-token-factory · nvidia-nemotron · tavily · pypdf 
 
 ## Links
 - Repo: https://github.com/banksythequantLab/bureaucracy-navigator
-- Demo: (hosted URL)
+- Demo: https://navigator.banksyai.com
 - Video: (≤ 3 min)
 
 *Not legal advice. Banksy AI LLC.*
