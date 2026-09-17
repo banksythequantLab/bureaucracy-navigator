@@ -13,7 +13,9 @@ def test_timeline_keys_and_fallback():
     t = predict("i-130", {"petitioner_status": "lpr", "relationship": "spouse"}, "2026-09-20")
     assert t.key == "lpr:spouse" and t.stale is True and t.min_months == 45
     assert t.earliest == "2030-06-21" or t.earliest.startswith("2030")
-    assert select_key("i-765", {"category": "(c)(8)"}) == "(c)(8)"
+    assert select_key("i-765", {"category": "(c)(8)", "reason": "renewal"}) == "(c)(8):renewal"
+    assert select_key("i-765", {"category": "(c)(8)"}) == "(c)(8):initial"
+    assert predict("i-765", {"category": "(c)(8)", "reason": "renewal"}).min_months == 3.5  # falls back to (c)(8) row offline
     assert predict("i-765", {"category": "(c)(99)"}).key == "default"
 
 

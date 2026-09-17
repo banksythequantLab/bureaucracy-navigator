@@ -26,6 +26,7 @@ Bureaucracy Navigator turns USCIS Forms I-765, N-400 and I-130 into a bilingual 
 
 ## Challenges we ran into
 - The USCIS web fee page is a JS lookup with no static amounts; the G-1055 **PDF** is the authoritative schedule, and Tavily Extract turned out to read it well enough to parse per-form rows and even the I-765 "Appendix C" fee exceptions.
+- Two days before this write-up USCIS replaced the I-765 edition (08/21/25 → 09/15/26) with **no grace period**: the old edition is rejected if postmarked on or after Sept 15, 2026. We were filling the old edition. The live rule card caught it; the snapshot parser now reads that cutover language and turns it into a hard reject on the wrong edition, on either side of the date.
 - Our own first draft carried a stale "$85 biometrics fee" rule for I-765 from a cached page. The live G-1055 showed it no longer exists — replaced by a separate, non-waivable Pub. L. 119-21 fee. The product caught our mistake before a user could; that became the demo.
 - PDF quirks: per-page A-Number widgets, a misnamed trip-row field, checkbox on-states that differ *within the same form* ("/APT " vs "/APT"), tooltip part numbers that disagree with the printed form.
 

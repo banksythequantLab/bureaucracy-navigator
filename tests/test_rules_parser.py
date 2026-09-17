@@ -2,6 +2,7 @@
 (captured from Tavily Extract on 2026-09-16)."""
 from packages.rules.snapshot import (
     parse_biometrics,
+    parse_cutover,
     parse_edition_alert,
     parse_edition_dates,
     parse_fee_row,
@@ -68,3 +69,15 @@ def test_known_snapshots_present_for_all_forms():
     for form in FORM_PAGES:
         k = known_snapshot(form)
         assert k is not None and k.stale is True and k.fee_paper.value and k.edition_dates.value, form
+
+
+CUTOVER = """There is **no grace period** for the revised edition. Please note that USCIS will:
+* Accept the 08/21/25 edition of Form I-765 if it is postmarked or electronically submitted before Sept. 15, 2026;
+* Reject the 08/21/25 edition of Form I-765 if it is postmarked or electronically submitted on or after Sept. 15, 2026; and
+* Only accept the 09/15/26 edition of Form I-765 if it is postmarked or electronically submitted on or after Sept. 15, 2026."""
+
+
+def test_parse_cutover():
+    c = parse_cutover(CUTOVER)
+    assert c["old"] == "08/21/25" and c["new"] == "09/15/26" and c["effective"] == "2026-09-15"
+    assert parse_cutover("nothing") is None

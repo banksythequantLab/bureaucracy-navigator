@@ -55,6 +55,11 @@ class RuleSnapshot(BaseModel):
     fetched_at: str
     edition_dates: Sourced = Field(default_factory=Sourced)
     edition_alert: Sourced = Field(default_factory=Sourced)  # e.g. "new edition 09/15/26" banner
+    # Cutover parsed from "Reject the <old> edition ... on or after <date>" language (no-grace-period revisions)
+    cutover_old_edition: Optional[str] = None
+    cutover_new_edition: Optional[str] = None
+    cutover_effective: Optional[str] = None  # ISO date
+    cutover_excerpt: Optional[str] = None
     fee_schedule_edition: Optional[str] = None
     fee_table_excerpt: Optional[str] = None  # full G-1055 row(s) for the adjudicator
     fee_paper: Sourced = Field(default_factory=Sourced)
@@ -149,6 +154,27 @@ def _row_text(md: str, start: int, limit: int = 900) -> str:
     chunk = md[start : start + limit]
     nxt = _NEXT_FORM.search(chunk, 20)
     return chunk[: nxt.start()] if nxt else chunk
+
+
+_MONTHS = {m: i for i, m in enumerate(["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"], 1)}
+
+
+def parse_cutover(md: str) -> Optional[dict[str, str]]:
+    """Detect 'Reject the 08/21/25 edition ... on or after Sept. 15, 2026' and the replacing edition."""
+    m = re.search(r"Reject the\s+" + _DATE_STRICT + r"\s+edition[^.]{0,160}?on or after\s+([A-Z][a-z]{2,8})\.?\s+(\d{1,2}),\s+(\d{4})", md)
+    if not m:
+        return None
+    old = m.group(1)
+    mon = _MONTHS.get(m.group(2)[:3].lower())
+    if not mon:
+        return None
+    eff = f"{int(m.group(4)):04d}-{mon:02d}-{int(m.group(3)):02d}"
+    new = None
+    m2 = re.search(r"Only accept the\s+" + _DATE_STRICT + r"\s+edition", md)
+    if m2:
+        new = m2.group(1)
+    s0 = max(0, m.start() - 120)
+    return {"old": old, "new": new or "", "effective": eff, "excerpt": md[s0 : m.end() + 160]}
 
 
 def parse_fee_row(g1055_md: str, form_title: str) -> dict[str, str]:
@@ -271,6 +297,10 @@ def _build_live(form: str) -> RuleSnapshot:
         alert = parse_edition_alert(form_md)
         if alert:
             snap.edition_alert = Sourced(value=alert[0], source_url=form_url, excerpt=alert[1])
+        cut = parse_cutover(form_md)
+        if cut:
+            snap.cutover_old_edition, snap.cutover_new_edition = cut["old"], cut["new"] or None
+            snap.cutover_effective, snap.cutover_excerpt = cut["effective"], cut["excerpt"]
         snap.where_to_file_url = parse_where_to_file(form_md)
         if not snap.where_to_file_url:
             snap.warnings.append("Where-to-file link not found on form page")

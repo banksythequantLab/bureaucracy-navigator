@@ -9,7 +9,7 @@ Built on **Nebius Token Factory** (NVIDIA **Nemotron 3**) with **Tavily** keepin
 
 ## What it does (I-130, I-765, N-400 · full EN/ES)
 
-1. **Live rule check** — Tavily extracts today's edition date, fee (paper vs online), biometrics rule, and filing address; nothing is hardcoded.
+1. **Live rule check** — Tavily extracts today's edition date, any no-grace-period edition cutover, fee (paper vs online), and filing address; nothing is hardcoded.
 2. **Interview** — Nemotron asks one plain-language question at a time and branches (e.g., I-765 category decides fee, biometrics, address).
 3. **"Why does this field exist?"** — every field carries its legal basis (INA / 8 CFR / Fed. Reg.) and its known failure modes.
 4. **Fill** — official USCIS AcroForm PDFs populated with pypdf.
@@ -64,7 +64,7 @@ packages/rules/timeline   processing-time predictor (Tavily live, committed Sep-
 packages/agents/cache     disk cache for phrasing + explanations (repeat interview 50 s → 2 s)
 packages/agents/sentinel  Deadline Sentinel: opt-in case, cited deadline rules, 7-day-throttled email runner
 docs/                     Devpost draft, 3-minute video script
-tests/                    39 offline tests incl. real-PDF fill + read-back and a seeded bad packet
+tests/                    41 offline tests incl. real-PDF fill + read-back and a seeded bad packet
 ```
 
 ## Roadmap

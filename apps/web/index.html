@@ -108,6 +108,7 @@ const T = {
         sent:"Deadline Sentinel", sentblurb:"Opt in and we compute every clock that matters and email you when one is close. Delete anytime.", sentgo:"Watch my deadlines",
         email:"Email (optional)", ead_expires:"Current EAD expires (I-765 renewals)", i94_expires:"I-94 expires", rfe_received_on:"RFE received on", priority_date:"Priority date (I-130)",
         urg:{overdue:"Overdue", now:"This week", soon:"Soon", later:"Later"}, days:"days", demo:"Load demo packet",
+        required:"Required edition", cutover_after:"no grace period since", rejected:"is rejected", cutover_on:"Edition changes on", no_grace:"no grace period",
         foot:"This tool explains and checks forms. It is not legal advice. Open source · Nebius Token Factory + NVIDIA Nemotron + Tavily." },
   es: { start:"Comenzar entrevista", rules:"Verificado hoy en uscis.gov", edition:"Edición(es) aceptada(s)", alert:"Nueva edición anunciada", paper:"Tarifa · papel", online:"Tarifa · en línea",
         addresses:"Dónde presentar", live:"en vivo", stale:"última verificación", submit:"Siguiente", skip:"Omitir (opcional)", why:"¿Por qué existe este campo?", check:"Simulador de rechazo",
@@ -119,6 +120,7 @@ const T = {
         sent:"Vigilante de plazos", sentblurb:"Active la vigilancia y calculamos cada plazo que importa y le avisamos por correo cuando uno se acerque. Bórrelo cuando quiera.", sentgo:"Vigilar mis plazos",
         email:"Correo (opcional)", ead_expires:"Vence el EAD actual (renovaciones I-765)", i94_expires:"Vence el I-94", rfe_received_on:"RFE recibido el", priority_date:"Fecha de prioridad (I-130)",
         urg:{overdue:"Vencido", now:"Esta semana", soon:"Pronto", later:"Más adelante"}, days:"días", demo:"Cargar paquete de ejemplo",
+        required:"Edición obligatoria", cutover_after:"sin periodo de gracia desde", rejected:"se rechaza", cutover_on:"La edición cambia el", no_grace:"sin periodo de gracia",
         foot:"Esta herramienta explica y revisa formularios. No es asesoría legal. Código abierto · Nebius Token Factory + NVIDIA Nemotron + Tavily." }
 };
 const $ = id => document.getElementById(id);
@@ -148,8 +150,11 @@ async function loadRules() {
     if (my !== rulesReq) return;
     const badge = s.stale ? `<span class="badge stale">${t("stale")} ${s.fetched_at.slice(0,10)}</span>` : `<span class="badge live">${t("live")} · ${s.fetched_at.slice(0,10)}</span>`;
     const cell = (k, v, url) => `<div><div class="k">${k}</div><div class="v">${v ?? "—"}</div>${url ? `<a href="${url}" target="_blank" rel="noopener">source</a>` : ""}</div>`;
-    $("rule").innerHTML = cell(t("edition"), s.edition_dates.value, s.edition_dates.source_url)
-      + (s.edition_alert.value ? cell(t("alert"), s.edition_alert.value, s.edition_alert.source_url) : "")
+    const cut = s.cutover_effective ? (new Date(s.cutover_effective + "T12:00:00") <= new Date()
+      ? `<div><div class="k">${t("required")}</div><div class="v">${s.cutover_new_edition}</div><div class="cite">${t("cutover_after")} ${s.cutover_effective} · ${s.cutover_old_edition} ${t("rejected")}</div></div>`
+      : `<div><div class="k">${t("cutover_on")} ${s.cutover_effective}</div><div class="v">${s.cutover_old_edition} → ${s.cutover_new_edition}</div><div class="cite">${t("no_grace")}</div></div>`) : "";
+    $("rule").innerHTML = (cut ? cut : cell(t("edition"), s.edition_dates.value, s.edition_dates.source_url)
+      + (s.edition_alert.value ? cell(t("alert"), s.edition_alert.value, s.edition_alert.source_url) : ""))
       + cell(t("paper"), s.fee_paper.value, s.fee_paper.source_url) + cell(t("online"), s.fee_online.value, s.fee_online.source_url)
       + `<div><div class="k">${t("addresses")}</div><div class="v"><a href="${s.where_to_file_url}" target="_blank" rel="noopener">uscis.gov ↗</a></div></div>`
       + `<div><div class="k">G-1055</div><div class="v">${s.fee_schedule_edition ?? "—"}</div>${badge}</div>`

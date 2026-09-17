@@ -1,27 +1,31 @@
 {
   "form": "i-765",
-  "fetched_at": "2026-09-16T23:15:21+00:00",
+  "fetched_at": "2026-09-17T14:52:52.783710+00:00",
   "edition_dates": {
     "value": "08/21/25",
     "source_url": "https://www.uscis.gov/i-765",
-    "excerpt": "Edition Date |  | 08/21/25. You can find the edition date at the bottom of the page on the form and instructions."
+    "excerpt": "Edition Date\n\n08/21/25. You can find the edition date at the bottom of the page on the form and instructions.\n\nDates are listed in mm/dd/yy format.\n\nIf you complete and print this form to mail it, make sure that the form edition date and page numbers are visible at the bottom of all pages and that a"
   },
   "edition_alert": {
     "value": "09/15/26",
     "source_url": "https://www.uscis.gov/i-765",
-    "excerpt": "ALERT: On Sept. 15, 2026, we will publish a revised edition of Form I-765, Application for Employment Authorization (edition date: 09/15/26)."
+    "excerpt": "ink/88486)\n\n# I-765, Application for Employment Authorization\n\nAlert Type info\n\n**ALERT:** On Sept. 15, 2026, we will publish a revised edition of Form I-765, Application for Employment Authorization (edition date: 09/15/26). The form has been revised to align with the recently published [Establishing a Fixed Time Period o"
   },
+  "cutover_old_edition": "08/21/25",
+  "cutover_new_edition": "09/15/26",
+  "cutover_effective": "2026-09-15",
+  "cutover_excerpt": "\n\n* Accept the 08/21/25 edition of Form I-765 if it is postmarked or electronically submitted before Sept. 15, 2026;\n\n* Reject the 08/21/25 edition of Form I-765 if it is postmarked or electronically submitted on or after Sept. 15, 2026; and\n\n* Only accept the 09/15/26 edition of Form I-765 if it is postmarked or electronically submitted on or after Sept. 15, 2026.\n\nSee the **Special Instructi",
   "fee_schedule_edition": "09/09/26",
-  "fee_table_excerpt": "Appendix C: I-765 — General filing $520 paper / $470 online; $260 with I-485 filed on/after 2024-04-01 pending; $0 USCIS card error; Pub. L. 119-21 additional fee (separate payment, not waivable): $560 initial for (a)(12) TPS, (c)(8) ABC, (c)(11) parolee, (c)(19); $275 renewal (c)(8); $280 renewal TPS/parolee/(a)(4)/(c)(34).",
+  "fee_table_excerpt": "I-765 Application for Employment Authorization (uscis.gov/i-765) General filing for initial, replacement, or renewal Employment Authorization Document (EAD), unless noted below. Fee determined based on how form is submitted. Review all options below to confirm if you are eligible for a reduced fee or fee exemption.\nPaper Filing: $520 Online Filing: $470 If you filed Form I-485 with a fee on or after April 1, 2024 and your Form I-485 is still pending.\nPaper Filing: $260 Online Filing: $260 If you are filing for an initial, replacement, or renewal Employment Authorization Document (EAD) and you have a pending Form I-485, Application to Register Permanent Residence or Adjust Status that you filed on or after July 30, 2007, and before April 1, 2024, and you paid the Form I-485 filing fee.\n$0 If you are filing for replacement EAD because the card we issued to you contains incorrect information due to our error, or we issued your previous card but you never received it due to United States Postal Service (USPS) error or our error.\n$0 If you are filing under category (c)(33), consideration of Deferred Action for Childhood Arrivals.\nPaper Filing: $520 Online Filing: $470 If you are requesting an initial EAD under the following categories: • (a)(12) Temporary Protected Status (TPS); • (c)(8) Asylum applicant under the special ABC procedures; • (c)(11) Parolee (most categories - see belo",
   "fee_paper": {
     "value": "$520",
     "source_url": "https://www.uscis.gov/sites/default/files/document/forms/g-1055.pdf",
-    "excerpt": "I-765 ... General filing for initial, replacement, or renewal EAD ... Paper Filing: $520 Online Filing: $470"
+    "excerpt": "I-765 Application for Employment Authorization (uscis.gov/i-765) General filing for initial, replacement, or renewal Employment Authorization Document (EAD), unless noted below. Fee determined based on how form is submitted. Review all options below to confirm if you are eligible for a reduced fee o"
   },
   "fee_online": {
     "value": "$470",
     "source_url": "https://www.uscis.gov/sites/default/files/document/forms/g-1055.pdf",
-    "excerpt": "Paper Filing: $520 Online Filing: $470"
+    "excerpt": "I-765 Application for Employment Authorization (uscis.gov/i-765) General filing for initial, replacement, or renewal Employment Authorization Document (EAD), unless noted below. Fee determined based on how form is submitted. Review all options below to confirm if you are eligible for a reduced fee o"
   },
   "biometrics_note": {
     "value": null,
@@ -34,5 +38,6 @@
     "https://www.uscis.gov/i-765",
     "https://www.uscis.gov/sites/default/files/document/forms/g-1055.pdf"
   ],
-  "warnings": []
+  "warnings": [],
+  "stale": false
 }

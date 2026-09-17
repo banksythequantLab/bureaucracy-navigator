@@ -1,7 +1,7 @@
 # Form I-765, Application for Employment Authorization — field schema
-# Edition this schema was mapped against: 08/21/25 (PDF field names verified with
-# `python -m packages.forms.inspect packages/forms/pdf/i-765.pdf`). A 09/15/26
-# edition was announced; re-run the inspector and diff when it lands.
+# Edition: 09/15/26 (no-grace-period cutover on 2026-09-15; field names identical to 08/21/25, verified with
+# `python -m packages.forms.inspect packages/forms/pdf/i-765.pdf`). The 08/21/25 edition is kept as
+# i-765-2025-08-21.pdf for reference only — USCIS rejects it if postmarked on or after 2026-09-15.
 #
 # One entry per interview question. Composite types (name, address, category)
 # fan out to several PDF fields in packages/forms/maps/i_765.py.
@@ -11,7 +11,7 @@ title_en: Application for Employment Authorization
 title_es: Solicitud de Autorización de Empleo
 official_url: https://www.uscis.gov/i-765
 pdf: packages/forms/pdf/i-765.pdf
-pdf_edition: "08/21/25"
+pdf_edition: "09/15/26"
 license: CC-BY-4.0
 
 sections:

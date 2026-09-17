@@ -91,10 +91,33 @@ def run_checks(schema: FormSchema, answers: dict[str, Any], snapshot: RuleSnapsh
     return out
 
 
-def snapshot_checks(schema: FormSchema, answers: dict[str, Any], snap: RuleSnapshot) -> list[Finding]:
+def snapshot_checks(schema: FormSchema, answers: dict[str, Any], snap: RuleSnapshot, today: "date | None" = None) -> list[Finding]:
+    from datetime import date as _date
+
+    today = today or _date.today()
     out: list[Finding] = []
+    # No-grace-period cutover: after the effective date the old edition is rejected outright,
+    # and before it the NEW edition is rejected — both are hard rejects, not heads-ups.
+    if snap.cutover_effective and schema.pdf_edition:
+        eff = _date.fromisoformat(snap.cutover_effective)
+        if today >= eff and schema.pdf_edition == snap.cutover_old_edition:
+            out.append(Finding(
+                id="edition.cutover", severity="reject", source="snapshot",
+                text_en=(f"USCIS rejects the {snap.cutover_old_edition} edition if postmarked on or after {eff:%b %d, %Y} "
+                         f"(no grace period); only the {snap.cutover_new_edition or 'new'} edition is accepted now."),
+                text_es=(f"USCIS rechaza la edición {snap.cutover_old_edition} si el matasellos es del {eff:%d/%m/%Y} o posterior "
+                         f"(sin periodo de gracia); ahora solo se acepta la edición {snap.cutover_new_edition or 'nueva'}."),
+                cite=[snap.edition_alert.source_url or ""],
+            ))
+        elif today < eff and snap.cutover_new_edition and schema.pdf_edition == snap.cutover_new_edition:
+            out.append(Finding(
+                id="edition.too_early", severity="reject", source="snapshot",
+                text_en=f"The {snap.cutover_new_edition} edition is rejected if postmarked before {eff:%b %d, %Y}; use {snap.cutover_old_edition} until then.",
+                text_es=f"La edición {snap.cutover_new_edition} se rechaza si el matasellos es anterior al {eff:%d/%m/%Y}; use la {snap.cutover_old_edition} hasta entonces.",
+                cite=[snap.edition_alert.source_url or ""],
+            ))
     # Edition drift: the PDF we fill vs what uscis.gov accepts today
-    if schema.pdf_edition and snap.edition_dates.value:
+    if schema.pdf_edition and snap.edition_dates.value and not snap.cutover_effective:
         accepted = [d.strip() for d in snap.edition_dates.value.split(",")]
         if schema.pdf_edition not in accepted:
             out.append(Finding(

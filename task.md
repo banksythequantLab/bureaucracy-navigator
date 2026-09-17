@@ -64,12 +64,21 @@ _Nebius x NVIDIA Global AI Hackathon · deadline Oct 30 2026 10:00 PDT · Notion
 - [x] packages/agents/cache.py — disk cache for phrasing + /explain keyed on model+lang+field text; interview 50 s cold → 2 s warm, explain 1.6 s → 0.03 s
 - [x] 39/39 tests
 
+## Done 2026-09-17 — Tavily key live + I-765 edition cutover
+- [x] Tavily key validated; all three known snapshots refreshed live (i-765 / n-400 / i-130 stale=False)
+- [x] **Caught live:** uscis.gov now says the 08/21/25 I-765 edition is REJECTED if postmarked on/after 2026-09-15 (no grace period); only 09/15/26 accepted. We were filling 08/21/25.
+- [x] Fetched the 09/15/26 edition on Vesper; field names identical (180/180, one tooltip diff); swapped PDF, `pdf_edition: "09/15/26"`, old kept as i-765-2025-08-21.pdf; fill verified (footer 09/15/26)
+- [x] snapshot.py: parse_cutover() reads the "Reject the X edition … on or after DATE / Only accept Y" language → cutover_old/new/effective
+- [x] checks.py: edition.cutover (reject) after the date on the old edition; edition.too_early (reject) before it on the new; generic stale/upcoming suppressed when a cutover is known
+- [x] UI rule card: "Required edition 09/15/26 — no grace period since 2026-09-15 · 08/21/25 is rejected"
+- [x] timeline.py live path: egov.uscis.gov refuses headless fetches → Tavily Extract on manifestlaw's monthly compilation, anchored per category; (c)(8) split initial (1 mo) vs renewal (15.5 mo); source labelled third-party
+- [x] TAVILY_API_KEY → .env on Vesper (gitignored)
+- [x] 41/41 tests; E2E with both keys: live badge + Nemotron review on the demo packet
+
 ## Blockers
-- [ ] TAVILY_API_KEY — keyless monthly limit was hit during dev; live snapshots intermittent until a key is set
 - [ ] Devpost rules: one team, two entries?
 
 ## Next (Week 6)
-- [ ] TAVILY_API_KEY → .env (last live-vs-stale gap)
 - [ ] Derek: review Spanish (packages/schemas/es/*.es.yaml, i-130.yaml, sentinel strings)
 - [ ] `docker compose up --build` on Vesper; pick a public host (VPS/Nebius VM) and put the URL in docs/devpost.md
 - [ ] Record the video per docs/video-script.md; submit on Devpost (deadline Oct 30 10:00 PDT)
