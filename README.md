@@ -7,7 +7,7 @@ Built on **Nebius Token Factory** (NVIDIA **Nemotron 3**) with **Tavily** keepin
 
 **Not legal advice.** This tool explains and checks forms; it does not give legal advice or predict eligibility. / *No es asesoría legal.*
 
-## What it does (v1 scope: I-130, I-765, N-400 · EN/ES) — I-765 and N-400 fill today; I-130 next
+## What it does (I-130, I-765, N-400 · full EN/ES)
 
 1. **Live rule check** — Tavily extracts today's edition date, fee (paper vs online), biometrics rule, and filing address; nothing is hardcoded.
 2. **Interview** — Nemotron asks one plain-language question at a time and branches (e.g., I-765 category decides fee, biometrics, address).
@@ -57,8 +57,10 @@ packages/rules/snapshot   Tavily RuleSnapshot: uscis.gov form page + G-1055 PDF 
 packages/rules/checks     deterministic adjudicator core: schema risks, required_when, edition drift, fee drift
 packages/agents/nebius    Nebius/Nemotron client (reasoning + fast tiers, structured output)
 packages/agents/interview deterministic question order; Nemotron phrases questions + parses free text (optional)
+packages/agents/adjudicator Nemotron review: adds cited cross-field findings; can never remove or downgrade a deterministic one
+packages/schemas/es/      Spanish sidecars (why + finding text) merged at load; tests enforce 100% coverage
 packages/forms/           official USCIS PDFs, AcroForm inspector, answers→field maps, pypdf filler
-tests/                    24 offline tests incl. real-PDF fill + read-back and a seeded bad packet
+tests/                    33 offline tests incl. real-PDF fill + read-back and a seeded bad packet
 ```
 
 ## Roadmap
@@ -68,7 +70,7 @@ tests/                    24 offline tests incl. real-PDF fill + read-back and a
 | 1 | Scaffold, Nebius client, Tavily RuleSnapshot, I-765 schema (EN) ✅ |
 | 2 | Interview agent on I-765; pypdf fill of the official PDF; deterministic adjudicator core ✅ |
 | 3 | N-400 schema + PDF fill; web UI (EN/ES); known-snapshot fallback for all 3 forms ✅ — Spanish why/finding text + Nemotron phrasing pending keys |
-| 4 | Adjudicator agent + deterministic checks; I-130 schema + fill |
+| 4 | I-130 schema + fill; full Spanish parity (why + findings, test-enforced); Nemotron adjudicator layer on top of deterministic checks ✅ |
 | 5 | Processing-time predictor; Deadline Sentinel |
 | 6 | Polish, 3-minute video, hosted demo, Devpost submission |
 

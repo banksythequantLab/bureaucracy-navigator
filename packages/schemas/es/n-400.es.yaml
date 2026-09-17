@@ -1,0 +1,69 @@
+# Spanish explanations for N-400 — merged into the schema at load time.
+why:
+  basis: >
+    El fundamento define el cálculo de residencia continua y presencia física que aplica
+    USCIS (5 años, o 3 como cónyuge de ciudadano, o ninguno para militares en tiempo de
+    hostilidades). Marcar más de una casilla, o la equivocada, retrasa o rechaza el N-400.
+  a_number: "Cada página del N-400 lleva su A-Number; así USCIS localiza su expediente de residente permanente."
+  married_to_usc_3_years: "Las tres condiciones son necesarias para INA 319(a); USCIS compara la fecha de naturalización del cónyuge con la del matrimonio."
+  full_name: "Se imprime en el Certificado de Naturalización exactamente como se escribe aquí; corregirlo después requiere un nuevo N-565 y tarifa."
+  other_names: "Las verificaciones de nombre del FBI se hacen con cada nombre; omitir un apellido de soltera o alias es causa común de que la entrevista se posponga."
+  name_change: "Un cambio de nombre solo es posible en una ceremonia de juramento judicial, lo que en algunos distritos añade meses de espera."
+  new_name: "Va en el certificado y en la orden judicial; escríbalo exactamente."
+  uscis_online_account: "Vincula la presentación en papel con su cuenta en línea para recibir actualizaciones de estado."
+  sex: "Se registra en el certificado."
+  dob: "Debe coincidir con su tarjeta verde y acta de nacimiento; una discrepancia genera un RFE por el registro original."
+  lpr_date: >
+    Todos los relojes de elegibilidad empiezan aquí. Puede presentar hasta 90 días antes de
+    cumplir 5 años (o 3 en la vía de cónyuge); presentar antes se deniega, no se rechaza,
+    y la tarifa se pierde.
+  country_of_birth: "Verificación de identidad en los sistemas de USCIS, el Departamento de Estado y el FBI."
+  nationality: "Algunos países no permiten la doble nacionalidad; USCIS lo registra para la cláusula de renuncia del juramento."
+  disability_accommodation: "Si es así, debe presentarse el Formulario N-648 de un médico autorizado junto con el N-400; sin él, los exámenes son obligatorios."
+  ssn_apply: "Ahorra una visita a la oficina de la SSA; requiere el consentimiento de divulgación del punto 12.C."
+  ssn: "Se usa para actualizar los registros de la SSA al estatus de ciudadano."
+  physical_address: "Determina la oficina local de USCIS que lo entrevistará; debe haber vivido en ese estado/distrito 3 meses antes de presentar."
+  physical_address_since: "USCIS exige 3 meses de residencia en el estado o distrito antes de presentar."
+  mailing_same_as_physical: "Los avisos de entrevista y la carta del juramento van a la dirección postal; un aviso perdido puede cerrar el caso."
+  mailing_address: "Adonde se enviará cada aviso."
+  trips: >
+    Dos relojes distintos: un solo viaje de 6 meses o más presume una interrupción de la
+    residencia continua; el tiempo total fuera debe ser menor a la mitad del periodo legal
+    (30 de 60 meses, o 18 de 36 en la vía de cónyuge).
+  total_days_outside: "USCIS suma cada viaje; el total debe ser menor a la mitad del periodo."
+  longest_trip_days: "Seis meses o más en un solo viaje activa la presunción de interrupción de la residencia continua."
+  claimed_citizen: "Una declaración falsa de ciudadanía después de 1996 es una barrera permanente; responda con cuidado y busque asesoría antes de presentar si la respuesta es sí."
+  voted: "Votar ilegalmente es causa de deportación y un problema de buen carácter moral; USCIS cruza los padrones electorales."
+  overdue_taxes: "Los impuestos atrasados no son una barrera automática, pero USCIS espera un plan de pagos firmado con el IRS y comprobantes de pago."
+  tax_payment_plan: "El plan más los comprobantes de pago es lo que los oficiales aceptan en lugar del pago total."
+  nonresident_tax: "Declararse no residente en impuestos se trata como evidencia de que abandonó la residencia en EE. UU."
+  selective_service: "No inscribirse entre los 18 y 26 años puede mostrar falta de buen carácter moral salvo que no haya sido consciente e intencional; se necesita una carta de estatus del SSS."
+  daytime_phone: "Se usa para cambios en la programación de la entrevista."
+  mobile_phone: "Las alertas por texto requieren el Formulario G-1145."
+  email: "Alertas de cuenta y avisos."
+  signature_type: "El N-400 tiene tres líneas de firma (Parte 11, y Partes 15-16 en la entrevista). La Parte 11 debe firmarse con tinta antes de enviar; las otras se firman frente al oficial."
+  filing_online: "En línea cuesta $50 menos, pero las solicitudes de tarifa reducida y de exención deben presentarse en papel."
+  fee_option: "Estándar $760 papel / $710 en línea; reducida $380 si el ingreso del hogar ≤ 400 % de la guía de pobreza (solo papel, con prueba); exención mediante I-912; $0 para militares bajo INA 328/329."
+  fee_paid: "Se verifica en vivo contra el G-1055 vigente."
+  income_proof_attached: "Obligatorio para la tarifa reducida."
+  n648_attached: "Obligatorio al solicitar la excepción médica."
+  days_as_lpr: "Alimenta la verificación de presentación anticipada de 90 días."
+  days_at_current_address: "Alimenta la verificación de 3 meses de residencia en el estado/distrito."
+  moved_within_same_district: "Mudarse dentro del mismo distrito no reinicia el reloj de 3 meses."
+risks:
+  spouse_basis_not_married: "La vía de 3 años exige vivir en unión matrimonial con el mismo cónyuge ciudadano durante los 3 años; de lo contrario use la disposición general de 5 años."
+  filed_too_early: "Le faltan más de 90 días para cumplir el periodo de residencia requerido. Un N-400 anticipado se deniega y la tarifa no se reembolsa; espere a la ventana de 90 días."
+  n648_missing: "Solicitó una excepción médica pero no adjunta el Formulario N-648; USCIS emitirá un RFE o exigirá los exámenes."
+  district_3_months: "Se mudó a este estado/distrito hace menos de 3 meses; presente después de los 3 meses o USCIS puede denegar por falta de residencia jurisdiccional."
+  trip_over_6_months: "Un viaje de 6 a 12 meses presume que interrumpió la residencia continua; prepárese para refutarlo con declaraciones de impuestos, contrato de alquiler, empleo y lazos familiares mantenidos en EE. UU."
+  trip_over_1_year: "Un viaje de un año o más interrumpe la residencia continua de forma directa (salvo N-470 aprobado); el reloj de residencia se reinicia desde su regreso."
+  physical_presence_short: "Los días totales fuera de EE. UU. superan la mitad del periodo legal, por lo que aún no cumple el requisito de presencia física."
+  false_claim: "Un sí aquí es una posible barrera permanente a la naturalización y puede activar la deportación; consulte a un abogado antes de presentar."
+  unlawful_voting: "Votar o registrarse siendo no ciudadano es causa de deportación; consulte a un abogado antes de presentar."
+  taxes_no_plan: "Lleve a la entrevista un acuerdo de pago a plazos del IRS/estado y el historial de pagos, o espere una continuación."
+  nonresident_filing: "Declarar impuestos como extranjero no residente crea una presunción de residencia abandonada; busque asesoría antes de presentar."
+  sss_not_registered: "Obtenga una carta de información de estatus del Servicio Selectivo y una declaración que explique por qué no se inscribió; los oficiales piden ambas."
+  invalid_signature: "Solo se acepta una firma manuscrita con tinta; las firmas a máquina, selladas o electrónicas pueden causar denegación y pérdida de la tarifa."
+  unsigned: "Los formularios sin firma se rechazan al recibirse."
+  reduced_fee_online: "Los N-400 con tarifa reducida o exención no pueden presentarse en línea; USCIS los rechaza. Presente en papel."
+  reduced_fee_no_proof: "La tarifa reducida de $380 requiere documentación del ingreso del hogar; sin ella el paquete se rechaza por tarifa incorrecta."

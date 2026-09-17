@@ -47,7 +47,7 @@
 <header>
   <h1 id="t-title">Bureaucracy Navigator</h1>
   <span class="sp"></span>
-  <select id="form"><option value="i-765">I-765 · Work permit / Permiso de trabajo</option><option value="n-400">N-400 · Naturalization / Naturalización</option></select>
+  <select id="form"><option value="i-765">I-765 · Work permit / Permiso de trabajo</option><option value="n-400">N-400 · Naturalization / Naturalización</option><option value="i-130">I-130 · Relative petition / Petición familiar</option></select>
   <select id="lang"><option value="en">English</option><option value="es">Español</option></select>
   <button id="start"></button>
 </header>
@@ -116,10 +116,13 @@ async function api(path, opts) {
   return r.json();
 }
 
+let rulesReq = 0;
 async function loadRules() {
+  const my = ++rulesReq;  // ignore responses from superseded requests (live lookups can take seconds)
   $("rule").innerHTML = "…";
   try {
     const s = await api(`/rules/${$("form").value}`);
+    if (my !== rulesReq) return;
     const badge = s.stale ? `<span class="badge stale">${t("stale")} ${s.fetched_at.slice(0,10)}</span>` : `<span class="badge live">${t("live")} · ${s.fetched_at.slice(0,10)}</span>`;
     const cell = (k, v, url) => `<div><div class="k">${k}</div><div class="v">${v ?? "—"}</div>${url ? `<a href="${url}" target="_blank" rel="noopener">source</a>` : ""}</div>`;
     $("rule").innerHTML = cell(t("edition"), s.edition_dates.value, s.edition_dates.source_url)
@@ -128,7 +131,7 @@ async function loadRules() {
       + `<div><div class="k">${t("addresses")}</div><div class="v"><a href="${s.where_to_file_url}" target="_blank" rel="noopener">uscis.gov ↗</a></div></div>`
       + `<div><div class="k">G-1055</div><div class="v">${s.fee_schedule_edition ?? "—"}</div>${badge}</div>`
       + (s.warnings.length ? `<div class="cite">${s.warnings.join(" · ")}</div>` : "");
-  } catch (e) { $("rule").textContent = e.message; }
+  } catch (e) { if (my === rulesReq) $("rule").textContent = e.message; }
 }
 
 function render() {
@@ -155,6 +158,7 @@ function render() {
     else if (q.type === "address") box.innerHTML = `<div class="grid">${field("in_care_of","in_care_of")}${field("street","street")}${field("unit_type","unit_type","apt")}${field("unit","unit")}${field("city","city")}${field("state","state","NY")}${field("zip","zip")}${field("country","country","USA")}</div>`;
     else if (q.type === "place") box.innerHTML = `<div class="grid">${field("city","city")}${field("state","state")}${field("country","country")}</div>`;
     else if (q.type === "passport") box.innerHTML = `<div class="grid">${field("number","number")}${field("country","country")}${field("expires","expires")}</div>`;
+    else if (q.type === "certificate") box.innerHTML = `<div class="grid">${field("number","number","C000000")}${field("place","city")}${field("date","expires")}</div>`;
     else if (q.type === "list") box.innerHTML = `<div id="rows"></div><button type="button" id="addrow">${t("add")}</button>`, addRow(q), $("addrow").onclick = () => addRow(q);
     else box.innerHTML = `<input id="single" placeholder="${q.type === "date" ? "YYYY-MM-DD" : q.type === "category" ? "(c)(8)" : ""}">`;
     const first = box.querySelector("input"); if (first) first.focus();
@@ -165,7 +169,7 @@ function addRow(q) {
   const rows = $("rows"); const d = document.createElement("div"); d.className = "grid";
   const f = (n, k) => `<label><span class="cite">${t(k)}</span><input name="${n}"></label>`;
   if (q.field_id === "trips" ) d.innerHTML = f("left","left") + f("returned","returned") + f("countries","countries");
-  else if (["other_names"].includes(q.field_id)) d.innerHTML = f("family","family") + f("given","given") + f("middle","middle");
+  else if (q.field_id.endsWith("other_names")) d.innerHTML = f("family","family") + f("given","given") + f("middle","middle");
   else d.innerHTML = `<label><span class="cite">${t("items")}</span><input name="item"></label>`;
   rows.appendChild(d);
 }
@@ -180,7 +184,7 @@ function collect() {
     });
     return out;
   }
-  if (["name","address","place","passport"].includes(q.type)) {
+  if (["name","address","place","passport","certificate"].includes(q.type)) {
     const o = {}; box.querySelectorAll("input").forEach(i => o[i.name] = i.value.trim()); return o;
   }
   return $("single").value.trim();
@@ -200,7 +204,7 @@ async function runCheck() {
     + (c.snapshot_stale ? ` <span class="badge stale">${t("stale")} ${(c.snapshot_fetched_at||"").slice(0,10)}</span>` : "");
   $("findings").innerHTML = c.findings.length ? c.findings.map(f => `<div class="find ${f.severity}"><div class="sev">${sev[f.severity] || f.severity}${f.field ? " · " + f.field : ""}</div><div>${lang === "es" && f.text_es ? f.text_es : f.text_en}</div><div class="cite">${(f.cite || []).join(" · ")}</div></div>`).join("")
     : `<div class="find info">${t("clean")}</div>`;
-  $("disc").textContent = c.disclaimer;
+  $("disc").textContent = (c.model_note ? c.model_note + " — " : "") + c.disclaimer + (c.model_used ? " · Nemotron review ✓" : "");
 }
 
 $("lang").onchange = () => { applyLang(); loadRules(); if (state) render(); };

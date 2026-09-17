@@ -22,6 +22,7 @@ from fastapi import FastAPI, HTTPException, Response
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
+from packages.agents import adjudicator
 from packages.agents import interview as iv
 from packages.agents import nebius
 from packages.forms.fill import fill_pdf
@@ -185,11 +186,14 @@ class CheckResponse(BaseModel):
     snapshot_fetched_at: str | None
     snapshot_stale: bool = False
     snapshot_warnings: list[str] = []
+    model_used: bool = False
+    model_note: str = ""
     disclaimer: str
 
 
 @app.post("/interview/{sid}/check", response_model=CheckResponse)
-def interview_check(sid: str, live: bool = True) -> CheckResponse:
+def interview_check(sid: str, live: bool = True, model: bool = True) -> CheckResponse:
+    """Deterministic checks always run; the Nemotron adjudicator adds findings when a key is configured."""
     s = _session(sid)
     schema = load_schema(s.form)
     snap = None
@@ -198,7 +202,13 @@ def interview_check(sid: str, live: bool = True) -> CheckResponse:
             snap = build_snapshot(s.form)
         except Exception:  # noqa: BLE001 - checks still run without the live layer
             snap = None
-    findings = run_checks(schema, s.answers, snap)
+    det = run_checks(schema, s.answers, snap)
+    findings, note = det, {}
+    used = False
+    if model and os.getenv("NEBIUS_API_KEY"):
+        extra, note = adjudicator.review(schema, s.answers, det, snap)
+        findings = adjudicator.merge(det, extra)
+        used = True
     counts: dict[str, int] = {}
     for f in findings:
         counts[f.severity] = counts.get(f.severity, 0) + 1
@@ -206,6 +216,7 @@ def interview_check(sid: str, live: bool = True) -> CheckResponse:
                          snapshot_fetched_at=snap.fetched_at if snap else None,
                          snapshot_stale=snap.stale if snap else False,
                          snapshot_warnings=snap.warnings if snap else [],
+                         model_used=used, model_note=note.get(s.lang, "") if note else "",
                          disclaimer=DISCLAIMER_ES if s.lang == "es" else DISCLAIMER_EN)
 
 

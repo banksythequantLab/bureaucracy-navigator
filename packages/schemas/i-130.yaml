@@ -1,0 +1,491 @@
+# Form I-130, Petition for Alien Relative — field schema (v1: Parts 1, 2-core, 4-core, 6 + filing)
+# Mapped against PDF edition 04/01/24 (`python -m packages.forms.inspect packages/forms/pdf/i-130.pdf`, 481 fields).
+# Part 2 address/employment history, Part 3 biographic, Part 4 family members / prior spouses, Part 5 → v2.
+form: i-130
+title_en: Petition for Alien Relative
+title_es: Petición para Familiar Extranjero
+official_url: https://www.uscis.gov/i-130
+pdf: packages/forms/pdf/i-130.pdf
+pdf_edition: "04/01/24"
+license: CC-BY-4.0
+
+sections:
+  - id: part1_relationship
+    title_en: "Part 1. Relationship"
+    title_es: "Parte 1. Relación"
+    fields:
+      - id: relationship
+        type: choice
+        options: [spouse, parent, sibling, child]
+        label_en: "Who are you petitioning for? (you are the petitioner; your relative is the beneficiary)"
+        label_es: "¿Para quién presenta la petición? (usted es el peticionario; su familiar es el beneficiario)"
+        why_en: >
+          The relationship decides the visa category and whether a visa is
+          immediately available (spouse, parent, or unmarried child under 21 of a
+          citizen) or years away (siblings, married children, relatives of permanent
+          residents). Permanent residents may petition only for a spouse or unmarried child.
+        cite: ["INA 201(b)(2)(A)(i)", "INA 203(a)"]
+        why_es: >
+          La relación determina la categoría de visa y si hay visa disponible de
+          inmediato (cónyuge, padre o hijo soltero menor de 21 de un ciudadano) o
+          en años (hermanos, hijos casados, familiares de residentes permanentes).
+          Un residente permanente solo puede pedir a su cónyuge o hijo soltero.
+        risks:
+          - id: lpr_cannot_petition
+            severity: deny
+            when: "petitioner_status == 'lpr' and relationship in ['parent','sibling']"
+            text_en: "A lawful permanent resident cannot petition for a parent or sibling; only U.S. citizens can. The petition would be denied and the fee lost."
+            text_es: "Un residente permanente no puede pedir a un padre ni a un hermano; solo los ciudadanos pueden. La petición sería denegada y la tarifa se perdería."
+          - id: parent_petitioner_under_21
+            severity: deny
+            when: "relationship == 'parent' and petitioner_age is not None and petitioner_age < 21"
+            text_en: "You must be at least 21 to petition for a parent."
+            text_es: "Debe tener al menos 21 años para pedir a un padre o madre."
+          - id: sibling_petitioner_under_21
+            severity: deny
+            when: "relationship == 'sibling' and petitioner_age is not None and petitioner_age < 21"
+            text_en: "You must be at least 21 to petition for a brother or sister."
+            text_es: "Debe tener al menos 21 años para pedir a un hermano o hermana."
+      - id: child_relationship_type
+        type: choice
+        options: [in_wedlock, out_of_wedlock, stepchild, adopted]
+        required_when: "relationship in ['child','parent']"
+        label_en: "For a child or parent: how is the relationship established?"
+        label_es: "Para hijo o padre: ¿cómo se establece la relación?"
+        why_en: >
+          Each path needs different proof: stepchildren require the marriage before
+          the child turned 18; adopted children need a completed adoption before 16
+          and two years of custody; out-of-wedlock children need proof of legitimation
+          or a bona fide parent-child relationship.
+        why_es: >
+          Cada vía exige pruebas distintas: los hijastros requieren que el matrimonio
+          haya ocurrido antes de que el niño cumpliera 18; los adoptados, una adopción
+          completada antes de los 16 y dos años de custodia; los nacidos fuera del
+          matrimonio, prueba de legitimación o de una relación real entre padre e hijo.
+        cite: ["INA 101(b)(1)(A)-(E)", "8 CFR 204.2(d)"]
+      - id: sibling_by_adoption
+        type: bool
+        required_when: "relationship == 'sibling'"
+        label_en: "Is the sibling relationship through adoption?"
+        label_es: "¿La relación de hermanos es por adopción?"
+        why_en: "Adoptive sibling relationships require the adoption decrees for both siblings."
+        why_es: "Las relaciones de hermanos por adopción requieren los decretos de adopción de ambos."
+        cite: ["8 CFR 204.2(g)"]
+      - id: status_through_adoption_or_marriage
+        type: bool
+        label_en: "Did you gain permanent residence or citizenship through adoption?"
+        label_es: "¿Obtuvo la residencia permanente o la ciudadanía por adopción?"
+        why_en: "If yes, you generally cannot petition for a birth parent or birth sibling."
+        why_es: "Si es así, por lo general no puede pedir a un padre o hermano biológico."
+        cite: ["INA 101(b)(1)(E)"]
+        risks:
+          - id: adopted_petitioning_birth_family
+            severity: deny
+            when: "status_through_adoption_or_marriage == True and relationship in ['parent','sibling']"
+            text_en: "Someone who immigrated through adoption cannot confer benefits on birth parents or birth siblings."
+            text_es: "Quien inmigró por adopción no puede pedir a sus padres o hermanos biológicos."
+
+  - id: part2_petitioner
+    title_en: "Part 2. Information About You (Petitioner)"
+    title_es: "Parte 2. Información sobre usted (peticionario)"
+    fields:
+      - id: petitioner_status
+        type: choice
+        options: [usc, lpr]
+        label_en: "Are you a U.S. citizen or a lawful permanent resident?"
+        label_es: "¿Es ciudadano estadounidense o residente permanente legal?"
+        why_en: "Sets which relatives you may petition for and which evidence of status you must attach."
+        why_es: "Determina a qué familiares puede pedir y qué prueba de estatus debe adjuntar."
+        cite: ["INA 201(b)", "INA 203(a)(2)"]
+        risks:
+          - id: status_evidence_missing
+            severity: rfe
+            when: "status_evidence_attached == False"
+            text_en: "Attach proof of your status: birth certificate, naturalization certificate, U.S. passport, or a copy of both sides of your green card."
+            text_es: "Adjunte prueba de su estatus: acta de nacimiento, certificado de naturalización, pasaporte de EE. UU. o copia de ambos lados de su tarjeta verde."
+      - id: petitioner_name
+        type: name
+        label_en: "Your full legal name"
+        label_es: "Su nombre legal completo"
+        why_en: "Matched against your citizenship or residence record and any prior petitions."
+        why_es: "Se compara con su registro de ciudadanía o residencia y con peticiones anteriores."
+        cite: ["8 CFR 103.2(a)(2)"]
+      - id: petitioner_other_names
+        type: list
+        item_type: name
+        max_items: 1
+        required: false
+        label_en: "Other names you have used"
+        label_es: "Otros nombres que ha usado"
+        why_en: "Prior petitions and records are searched under every name."
+        why_es: "Se buscan peticiones y registros anteriores bajo cada nombre."
+        cite: ["USCIS Form I-130 Instructions, Part 2 Item 5"]
+      - id: petitioner_a_number
+        type: text
+        required: false
+        label_en: "Your A-Number, if any"
+        label_es: "Su A-Number, si tiene"
+        why_en: "Required for permanent residents; naturalized citizens usually have one too."
+        why_es: "Obligatorio para residentes permanentes; los ciudadanos naturalizados suelen tener uno."
+        cite: ["USCIS Form I-130 Instructions, Part 2 Item 1"]
+      - id: petitioner_ssn
+        type: text
+        required: false
+        label_en: "Your Social Security Number, if any"
+        label_es: "Su Número de Seguro Social, si tiene"
+        why_en: "Used to cross-check the Affidavit of Support later in the process."
+        why_es: "Se usa para verificar la Declaración de Apoyo más adelante."
+        cite: ["USCIS Form I-130 Instructions, Part 2 Item 3"]
+      - id: petitioner_dob
+        type: date
+        label_en: "Your date of birth"
+        label_es: "Su fecha de nacimiento"
+        why_en: "Establishes that you are 21 when petitioning for a parent or sibling."
+        why_es: "Establece que tiene 21 años al pedir a un padre o hermano."
+        cite: ["INA 201(b)(2)(A)(i)", "INA 203(a)(4)"]
+      - id: petitioner_age
+        type: int
+        label_en: "Your age today"
+        label_es: "Su edad actual"
+        why_en: "Parent and sibling petitions require the petitioner to be at least 21."
+        why_es: "Las peticiones por padres y hermanos exigen que el peticionario tenga al menos 21 años."
+        cite: ["INA 201(b)(2)(A)(i)"]
+      - id: petitioner_sex
+        type: choice
+        options: [male, female]
+        label_en: "Sex"
+        label_es: "Sexo"
+        why_en: "Biographic record."
+        why_es: "Dato biográfico."
+        cite: ["USCIS Form I-130 Instructions, Part 2 Item 9"]
+      - id: petitioner_place_of_birth
+        type: place
+        label_en: "Your place of birth (city, state/province, country)"
+        label_es: "Su lugar de nacimiento (ciudad, estado/provincia, país)"
+        why_en: "Identity match; for citizens born abroad it points USCIS to the naturalization or CRBA record."
+        why_es: "Verificación de identidad; para ciudadanos nacidos en el extranjero indica el registro de naturalización o CRBA."
+        cite: ["USCIS Form I-130 Instructions, Part 2 Items 6-7"]
+      - id: petitioner_mailing_address
+        type: address
+        label_en: "Your mailing address"
+        label_es: "Su dirección postal"
+        why_en: "Receipt, RFE, and approval notices go here."
+        why_es: "Aquí llegan los avisos de recibo, RFE y aprobación."
+        cite: ["8 CFR 103.2(b)(19)"]
+      - id: petitioner_mailing_same_as_physical
+        type: bool
+        label_en: "Is that also where you physically live?"
+        label_es: "¿Es también donde vive físicamente?"
+        why_en: "Address history for the last five years is required; the physical address starts that history."
+        why_es: "Se requiere el historial de domicilios de los últimos cinco años; la dirección física inicia ese historial."
+        cite: ["USCIS Form I-130 Instructions, Part 2 Item 11"]
+      - id: petitioner_marriages
+        type: int
+        label_en: "How many times have you been married (including the current marriage)?"
+        label_es: "¿Cuántas veces se ha casado (incluido el matrimonio actual)?"
+        why_en: "For spouse petitions every prior marriage of both spouses must be shown to have legally ended."
+        why_es: "En peticiones de cónyuge, debe demostrarse que todos los matrimonios anteriores de ambos terminaron legalmente."
+        cite: ["8 CFR 204.2(a)(2)"]
+        risks:
+          - id: petitioner_prior_marriage_docs
+            severity: rfe
+            when: "relationship == 'spouse' and petitioner_marriages is not None and petitioner_marriages > 1 and prior_marriage_termination_attached == False"
+            text_en: "Attach the divorce decree, annulment, or death certificate for each of your prior marriages or expect an RFE."
+            text_es: "Adjunte la sentencia de divorcio, anulación o acta de defunción de cada matrimonio anterior o recibirá un RFE."
+      - id: petitioner_marital_status
+        type: choice
+        options: [single, married, divorced, widowed, separated, annulled]
+        label_en: "Your current marital status"
+        label_es: "Su estado civil actual"
+        why_en: "Must be 'married' for a spouse petition; 'separated' still counts as married."
+        why_es: "Debe ser 'casado' para una petición de cónyuge; 'separado' sigue contando como casado."
+        cite: ["INA 201(b)(2)(A)(i)"]
+      - id: marriage_date
+        type: date
+        required_when: "relationship == 'spouse'"
+        label_en: "Date of your current marriage"
+        label_es: "Fecha de su matrimonio actual"
+        why_en: "A marriage under two years old at approval yields conditional residence (CR-1) and a later I-751."
+        why_es: "Un matrimonio de menos de dos años al aprobarse da residencia condicional (CR-1) y luego un I-751."
+        cite: ["INA 216(g)(1)"]
+      - id: naturalization_certificate
+        type: bool
+        required_when: "petitioner_status == 'usc'"
+        label_en: "Did you obtain a Certificate of Naturalization or Certificate of Citizenship?"
+        label_es: "¿Obtuvo un Certificado de Naturalización o de Ciudadanía?"
+        why_en: "If yes, the certificate number, place, and date of issuance go in Items 38-39 and a copy is required."
+        why_es: "Si es así, el número, lugar y fecha del certificado van en los puntos 38-39 y se requiere copia."
+        cite: ["USCIS Form I-130 Instructions, Part 2 Items 38-39"]
+      - id: certificate
+        type: certificate
+        required_when: "naturalization_certificate == True"
+        label_en: "Certificate number, place of issuance, date of issuance"
+        label_es: "Número del certificado, lugar y fecha de emisión"
+        why_en: "USCIS verifies the certificate against its own record before approving."
+        why_es: "USCIS verifica el certificado contra su propio registro antes de aprobar."
+        cite: ["USCIS Form I-130 Instructions, Part 2 Item 39"]
+
+  - id: part4_beneficiary
+    title_en: "Part 4. Information About the Beneficiary"
+    title_es: "Parte 4. Información sobre el beneficiario"
+    fields:
+      - id: beneficiary_name
+        type: name
+        label_en: "Beneficiary's full legal name (as on passport)"
+        label_es: "Nombre legal completo del beneficiario (como en el pasaporte)"
+        why_en: "The National Visa Center and consulate match the visa to the passport name exactly."
+        why_es: "El Centro Nacional de Visas y el consulado comparan la visa con el nombre del pasaporte exactamente."
+        cite: ["8 CFR 103.2(a)(2)"]
+      - id: beneficiary_other_names
+        type: list
+        item_type: name
+        max_items: 1
+        required: false
+        label_en: "Other names the beneficiary has used"
+        label_es: "Otros nombres que ha usado el beneficiario"
+        why_en: "Background checks run on every name."
+        why_es: "Las verificaciones de antecedentes se hacen con cada nombre."
+        cite: ["USCIS Form I-130 Instructions, Part 4 Item 5"]
+      - id: beneficiary_a_number
+        type: text
+        required: false
+        label_en: "Beneficiary's A-Number, if any"
+        label_es: "A-Number del beneficiario, si tiene"
+        why_en: "Links to any prior immigration file, including removal proceedings."
+        why_es: "Vincula con cualquier expediente migratorio previo, incluidos procesos de deportación."
+        cite: ["USCIS Form I-130 Instructions, Part 4 Item 1"]
+      - id: beneficiary_dob
+        type: date
+        label_en: "Beneficiary's date of birth"
+        label_es: "Fecha de nacimiento del beneficiario"
+        why_en: "Children must be under 21 and unmarried to be immediate relatives; the Child Status Protection Act freezes age on filing for citizen parents."
+        why_es: "Los hijos deben ser menores de 21 y solteros para ser familiares inmediatos; la CSPA congela la edad al presentar si el padre es ciudadano."
+        cite: ["INA 201(f)", "INA 203(h)"]
+      - id: beneficiary_sex
+        type: choice
+        options: [male, female]
+        label_en: "Beneficiary's sex"
+        label_es: "Sexo del beneficiario"
+        why_en: "Biographic record."
+        why_es: "Dato biográfico."
+        cite: ["USCIS Form I-130 Instructions, Part 4 Item 9"]
+      - id: beneficiary_place_of_birth
+        type: place
+        label_en: "Beneficiary's place of birth"
+        label_es: "Lugar de nacimiento del beneficiario"
+        why_en: "Determines visa chargeability country, which drives the Visa Bulletin wait for preference categories."
+        why_es: "Determina el país de cargo de la visa, que define la espera del Boletín de Visas en categorías de preferencia."
+        cite: ["INA 202(b)"]
+      - id: prior_petition_for_beneficiary
+        type: choice
+        options: ["yes", "no", "unknown"]
+        label_en: "Has anyone else ever filed a petition for this beneficiary?"
+        label_es: "¿Alguien más ha presentado una petición por este beneficiario?"
+        why_en: "A prior spouse petition can trigger the INA 204(c) marriage-fraud bar review; disclose it."
+        why_es: "Una petición previa de cónyuge puede activar la revisión por fraude matrimonial de INA 204(c); declárela."
+        cite: ["INA 204(c)"]
+      - id: beneficiary_physical_address
+        type: address
+        label_en: "Beneficiary's current physical address"
+        label_es: "Dirección física actual del beneficiario"
+        why_en: "Decides whether the case goes to adjustment of status (in the U.S.) or consular processing."
+        why_es: "Define si el caso va por ajuste de estatus (en EE. UU.) o proceso consular."
+        cite: ["INA 245(a)", "INA 221"]
+      - id: beneficiary_in_us
+        type: bool
+        label_en: "Is the beneficiary currently in the United States?"
+        label_es: "¿El beneficiario se encuentra actualmente en los Estados Unidos?"
+        why_en: "Beneficiaries in the U.S. who entered lawfully may file I-485 with this petition; others need consular processing."
+        why_es: "Los beneficiarios en EE. UU. que entraron legalmente pueden presentar el I-485 junto con esta petición; los demás requieren proceso consular."
+        cite: ["INA 245(a)", "8 CFR 245.2(a)(2)(i)(B)"]
+      - id: concurrent_i485
+        type: bool
+        required_when: "beneficiary_in_us == True"
+        label_en: "Will the beneficiary file Form I-485 (adjustment of status) together with this petition?"
+        label_es: "¿El beneficiario presentará el Formulario I-485 (ajuste de estatus) junto con esta petición?"
+        why_en: >
+          Concurrent filing is allowed for immediate relatives and changes the
+          mailing address: the whole packet goes to the I-485 lockbox, not the I-130 one.
+        why_es: >
+          La presentación conjunta se permite para familiares inmediatos y cambia la
+          dirección de envío: todo el paquete va al lockbox del I-485, no al del I-130.
+        cite: ["8 CFR 245.2(a)(2)(i)(B)", "USCIS Direct Filing Addresses for Form I-130"]
+        risks:
+          - id: concurrent_wrong_lockbox
+            severity: reject
+            when: "concurrent_i485 == True and mailed_with_i485_packet == False"
+            text_en: "When filing with an I-485, the I-130 must be mailed in the same envelope to the I-485 lockbox; sent alone to the I-130 lockbox it is treated as a stand-alone petition."
+            text_es: "Al presentar con un I-485, el I-130 debe enviarse en el mismo sobre al lockbox del I-485; enviado solo al lockbox del I-130 se trata como petición independiente."
+          - id: concurrent_not_immediate_relative
+            severity: rfe
+            when: "concurrent_i485 == True and not (petitioner_status == 'usc' and relationship in ['spouse','parent','child'])"
+            text_en: "Concurrent I-485 filing is only available when a visa is immediately available (immediate relatives of citizens, or a current priority date)."
+            text_es: "La presentación conjunta del I-485 solo procede cuando hay visa disponible de inmediato (familiares inmediatos de ciudadanos o fecha de prioridad vigente)."
+      - id: consular_post
+        type: place
+        required_when: "beneficiary_in_us == False or concurrent_i485 == False"
+        label_en: "Consulate where the beneficiary will apply (city, country)"
+        label_es: "Consulado donde el beneficiario solicitará (ciudad, país)"
+        why_en: "Item 61 routes the approved petition to the National Visa Center and that post."
+        why_es: "El punto 61 dirige la petición aprobada al Centro Nacional de Visas y a ese consulado."
+        cite: ["USCIS Form I-130 Instructions, Part 4 Item 61"]
+      - id: beneficiary_marriages
+        type: int
+        required_when: "relationship == 'spouse'"
+        label_en: "How many times has the beneficiary been married (including this marriage)?"
+        label_es: "¿Cuántas veces se ha casado el beneficiario (incluido este matrimonio)?"
+        why_en: "Each prior marriage must be shown legally terminated before your marriage date."
+        why_es: "Debe demostrarse que cada matrimonio anterior terminó legalmente antes de la fecha de su matrimonio."
+        cite: ["8 CFR 204.2(a)(2)"]
+        risks:
+          - id: beneficiary_prior_marriage_docs
+            severity: rfe
+            when: "relationship == 'spouse' and beneficiary_marriages is not None and beneficiary_marriages > 1 and prior_marriage_termination_attached == False"
+            text_en: "Attach termination documents for each of the beneficiary's prior marriages."
+            text_es: "Adjunte los documentos de terminación de cada matrimonio anterior del beneficiario."
+      - id: beneficiary_daytime_phone
+        type: text
+        required: false
+        label_en: "Beneficiary's daytime phone"
+        label_es: "Teléfono diurno del beneficiario"
+        why_en: "Used by the consulate to schedule the interview."
+        why_es: "Lo usa el consulado para programar la entrevista."
+        cite: ["USCIS Form I-130 Instructions, Part 4 Item 14"]
+      - id: beneficiary_email
+        type: text
+        required: false
+        label_en: "Beneficiary's email"
+        label_es: "Correo electrónico del beneficiario"
+        why_en: "NVC communicates almost entirely by email."
+        why_es: "El NVC se comunica casi exclusivamente por correo electrónico."
+        cite: ["USCIS Form I-130 Instructions, Part 4 Item 16"]
+
+  - id: part6_contact
+    title_en: "Part 6. Petitioner's Statement, Contact Information, Declaration, and Signature"
+    title_es: "Parte 6. Declaración del peticionario, información de contacto y firma"
+    fields:
+      - id: read_language
+        type: choice
+        options: [english, interpreter]
+        label_en: "Did you read this form yourself in English, or did an interpreter read it to you?"
+        label_es: "¿Leyó usted mismo este formulario en inglés, o se lo leyó un intérprete?"
+        why_en: "If an interpreter helped, Part 7 must be completed and signed by them."
+        why_es: "Si lo ayudó un intérprete, este debe completar y firmar la Parte 7."
+        cite: ["USCIS Form I-130 Instructions, Part 6 Item 1"]
+      - id: interpreter_language
+        type: text
+        required_when: "read_language == 'interpreter'"
+        label_en: "Language the interpreter used"
+        label_es: "Idioma que usó el intérprete"
+        why_en: "Recorded for any later interview."
+        why_es: "Se registra para cualquier entrevista posterior."
+        cite: ["USCIS Form I-130 Instructions, Part 6 Item 1.B"]
+      - id: daytime_phone
+        type: text
+        label_en: "Your daytime phone"
+        label_es: "Su teléfono diurno"
+        why_en: "USCIS calls to resolve simple deficiencies."
+        why_es: "USCIS llama para resolver deficiencias simples."
+        cite: ["USCIS Form I-130 Instructions, Part 6 Item 3"]
+      - id: mobile_phone
+        type: text
+        required: false
+        label_en: "Your mobile phone, if any"
+        label_es: "Su celular, si tiene"
+        why_en: "Text alerts require Form G-1145."
+        why_es: "Las alertas por texto requieren el Formulario G-1145."
+        cite: ["USCIS Form G-1145"]
+      - id: email
+        type: text
+        required: false
+        label_en: "Your email, if any"
+        label_es: "Su correo electrónico, si tiene"
+        why_en: "Online account notices."
+        why_es: "Avisos de la cuenta en línea."
+        cite: ["USCIS Form I-130 Instructions, Part 6 Item 5"]
+      - id: signature_type
+        type: choice
+        options: [wet_ink, typed, stamped, software_generated, none]
+        label_en: "How will you sign the form?"
+        label_es: "¿Cómo firmará el formulario?"
+        why_en: "Since July 10, 2026 a typed, stamped, or software-generated signature can lead to denial and loss of the fee, even after acceptance. Sign in ink."
+        why_es: "Desde el 10 de julio de 2026, una firma escrita a máquina, sellada o generada por software puede causar la denegación y la pérdida de la tarifa, incluso después de aceptada. Firme a mano con tinta."
+        cite: ["DHS Interim Final Rule, Fed. Reg. (May 11, 2026)", "8 CFR 103.2(a)(2)"]
+        risks:
+          - id: invalid_signature
+            severity: deny
+            when: "signature_type in ['typed','stamped','software_generated']"
+            text_en: "Only a handwritten ink signature is accepted; typed/stamped/e-signatures risk denial and fee forfeiture."
+            text_es: "Solo se acepta una firma manuscrita con tinta; las firmas a máquina, selladas o electrónicas pueden causar denegación y pérdida de la tarifa."
+          - id: unsigned
+            severity: reject
+            when: "signature_type == 'none'"
+            text_en: "Unsigned forms are rejected at intake."
+            text_es: "Los formularios sin firma se rechazan al recibirse."
+
+  - id: filing
+    title_en: "Before You Mail — Fee and Evidence"
+    title_es: "Antes de enviar — Tarifa y evidencia"
+    fields:
+      - id: filing_online
+        type: bool
+        label_en: "Will you file online (myUSCIS)?"
+        label_es: "¿Presentará en línea (myUSCIS)?"
+        why_en: "Online is $50 cheaper and cannot be mailed to the wrong lockbox; concurrent I-485 packets must be filed on paper."
+        why_es: "En línea cuesta $50 menos y no puede enviarse al lockbox equivocado; los paquetes con I-485 conjunto deben presentarse en papel."
+        cite: ["Form G-1055"]
+        risks:
+          - id: concurrent_online
+            severity: reject
+            when: "filing_online == True and concurrent_i485 == True"
+            text_en: "An I-130 filed together with an I-485 must be filed on paper in one packet; online I-130 filing is for stand-alone petitions."
+            text_es: "Un I-130 presentado junto con un I-485 debe presentarse en papel en un solo paquete; la presentación en línea es solo para peticiones independientes."
+      - id: fee_paid
+        type: text
+        label_en: "Fee you plan to pay (e.g., $675)"
+        label_es: "Tarifa que planea pagar (p. ej., $675)"
+        why_en: "Checked live against the current G-1055; the I-130 has no fee waiver."
+        why_es: "Se verifica en vivo contra el G-1055 vigente; el I-130 no tiene exención de tarifa."
+        cite: ["8 CFR 106.2", "8 CFR 106.3"]
+      - id: mailed_with_i485_packet
+        type: bool
+        required_when: "concurrent_i485 == True"
+        label_en: "Will the I-130 travel in the same envelope as the I-485 packet?"
+        label_es: "¿El I-130 irá en el mismo sobre que el paquete del I-485?"
+        why_en: "Concurrent filings are only recognized when received together."
+        why_es: "Las presentaciones conjuntas solo se reconocen cuando se reciben juntas."
+        cite: ["8 CFR 245.2(a)(2)(i)(B)"]
+      - id: status_evidence_attached
+        type: bool
+        label_en: "Is proof of your citizenship or permanent residence attached?"
+        label_es: "¿Adjunta prueba de su ciudadanía o residencia permanente?"
+        why_en: "Required initial evidence; its absence is the most common I-130 RFE."
+        why_es: "Evidencia inicial obligatoria; su ausencia es el RFE más común del I-130."
+        cite: ["8 CFR 204.1(g)"]
+      - id: relationship_evidence_attached
+        type: bool
+        label_en: "Is proof of the relationship attached (marriage certificate, birth certificate, etc.)?"
+        label_es: "¿Adjunta prueba de la relación (acta de matrimonio, de nacimiento, etc.)?"
+        why_en: "The petition is approved on this evidence alone; for spouses, add proof the marriage is bona fide (joint lease, accounts, photos)."
+        why_es: "La petición se aprueba solo con esta evidencia; para cónyuges, agregue pruebas de que el matrimonio es real (contrato conjunto, cuentas, fotos)."
+        cite: ["8 CFR 204.2(a)(2)", "8 CFR 204.2(d)(2)"]
+        risks:
+          - id: relationship_evidence_missing
+            severity: rfe
+            when: "relationship_evidence_attached == False"
+            text_en: "Attach the civil document that proves the relationship; USCIS does not accept a petition on the form alone."
+            text_es: "Adjunte el documento civil que prueba la relación; USCIS no acepta la petición con solo el formulario."
+      - id: prior_marriage_termination_attached
+        type: bool
+        required_when: "relationship == 'spouse' and ((petitioner_marriages is not None and petitioner_marriages > 1) or (beneficiary_marriages is not None and beneficiary_marriages > 1))"
+        label_en: "Are divorce decrees / death certificates for ALL prior marriages of both spouses attached?"
+        label_es: "¿Adjunta sentencias de divorcio / actas de defunción de TODOS los matrimonios anteriores de ambos cónyuges?"
+        why_en: "A marriage is only valid for immigration if both parties were free to marry on the wedding date."
+        why_es: "Un matrimonio solo es válido para inmigración si ambos estaban libres para casarse en la fecha de la boda."
+        cite: ["8 CFR 204.2(a)(2)", "Matter of Hosseinian, 19 I&N Dec. 453"]
+
+fees:
+  baseline_g1055_09_09_26:
+    paper: "$675"
+    online: "$625"
+    fee_waiver: "not available for I-130"

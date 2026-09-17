@@ -30,16 +30,27 @@ _Nebius x NVIDIA Global AI Hackathon · deadline Oct 30 2026 10:00 PDT · Notion
 - [x] apps/web/index.html — bilingual single-file UI: live rule card w/ sources + live/stale badge, one-question interview with type-aware inputs, ¿Por qué? panel with cites, findings by severity, PDF download; Playwright-driven E2E in Spanish (3 findings)
 - [x] 24/24 tests
 
+## Done 2026-09-17 — Week 4 (ahead of schedule)
+- [x] I-130 (ed. 04/01/24, 481 fields): 41-question schema written bilingual; risks for LPR-petitioning-parent/sibling (deny), petitioner under 21, adoptee petitioning birth family, concurrent I-485 lockbox + online-filing rejects, prior-marriage termination docs, relationship/status evidence
+- [x] packages/forms/maps/i_130.py — Parts 1/2/4/6 incl. per-block APT on-state quirks ("/APT " vs "/APT"), P4Line5a misnomer; fill verified visually (pages 1 and 5)
+- [x] Spanish sidecars packages/schemas/es/{i-765,n-400}.es.yaml — every why + every risk; loader merges at load; tests/test_spanish_coverage.py enforces 100% for all forms
+- [x] Snapshot-derived findings (edition drift, fee mismatch) now bilingual
+- [x] packages/agents/adjudicator.py — Nemotron review with structured output; drops uncited findings; merge() keeps deterministic severity on collision; /check?model=true; offline → no-op
+- [x] UI: I-130 option, certificate input, rule-card race fix (stale response could overwrite a newer form's card)
+- [x] i-130 known snapshot now live-verified (edition 04/01/24, $675/$625, addresses URL)
+- [x] E2E I-130 in Spanish: 41 Qs → reject×3 (online+concurrent, wrong lockbox, $675 vs $625 online) + rfe×1
+- [x] 33/33 tests
+
 ## Blockers
 - [ ] NEBIUS_API_KEY not yet created → phrase/parse/explain fall back to labels (works, just not conversational)
 - [ ] TAVILY_API_KEY — keyless monthly limit was hit during dev; live snapshots intermittent until a key is set
 - [ ] Confirm Nemotron 3 Nano model ID in Token Factory console
 - [ ] Devpost rules: one team, two entries?
 
-## Next (Week 4)
-- [ ] Spanish `why_es` / `text_es` for every field + risk (Nemotron batch translate once NEBIUS_API_KEY exists, then human review)
-- [ ] I-130 schema + map (PDF + fields dump already in repo)
-- [ ] Verify I-130 edition live once TAVILY_API_KEY exists (`python -m packages.rules.snapshot i-130 --save-known`)
-- [ ] Nemotron adjudicator pass (fuzzy findings on top of deterministic ones) + processing-time predictor
-- [ ] Deploy demo (Vercel/VPS) and start the 3-min video script
+## Next (Week 5)
+- [ ] Derek: review Spanish sidecars (legal register) — packages/schemas/es/*.es.yaml + i-130.yaml inline
+- [ ] With NEBIUS_API_KEY: exercise adjudicator on the three fixtures; tune SYSTEM prompt; confirm Nano model id
+- [ ] Processing-time predictor (Tavily Extract on egov.uscis.gov) + Deadline Sentinel (cron, email via Banksy stack)
+- [ ] Deploy demo (Vercel FE + Nebius/VPS BE) and write the 3-min video script
+- [ ] Devpost page draft
 - [ ] Re-run inspector when the 09/15/26 I-765 edition posts; diff field names

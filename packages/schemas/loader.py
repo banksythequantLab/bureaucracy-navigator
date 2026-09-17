@@ -61,13 +61,31 @@ class FormSchema(BaseModel):
         return [r for f in self.all_fields() for r in f.risks]
 
 
+def _merge_es(data: dict, form: str) -> dict:
+    """Merge the optional Spanish sidecar (schemas/es/<form>.es.yaml) into why_es / text_es."""
+    p = SCHEMA_DIR / "es" / f"{form}.es.yaml"
+    if not p.exists():
+        return data
+    es = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
+    why, risks = es.get("why", {}), es.get("risks", {})
+    for sec in data.get("sections", []):
+        for f in sec.get("fields", []):
+            if not f.get("why_es") and f["id"] in why:
+                f["why_es"] = why[f["id"]].strip()
+            for r in f.get("risks", []):
+                if not r.get("text_es") and r["id"] in risks:
+                    r["text_es"] = risks[r["id"]].strip()
+    return data
+
+
 def load_schema(form: str) -> FormSchema:
-    p = SCHEMA_DIR / f"{form.lower()}.yaml"
+    form = form.lower()
+    p = SCHEMA_DIR / f"{form}.yaml"
     if not p.exists():
         raise FileNotFoundError(f"No schema for form '{form}' at {p}")
     data = yaml.safe_load(p.read_text(encoding="utf-8"))
-    return FormSchema.model_validate(data)
+    return FormSchema.model_validate(_merge_es(data, form))
 
 
 def available_forms() -> list[str]:
-    return sorted(p.stem for p in SCHEMA_DIR.glob("*.yaml"))
+    return sorted(p.stem for p in SCHEMA_DIR.glob("*.yaml") if p.parent == SCHEMA_DIR)

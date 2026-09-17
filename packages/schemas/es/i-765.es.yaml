@@ -1,0 +1,79 @@
+# Spanish explanations for I-765 — merged into the schema at load time (packages/schemas/loader.py).
+# Kept in a sidecar so the English schema stays readable and translations can be reviewed independently.
+why:
+  reason: >
+    USCIS procesa de forma distinta las solicitudes iniciales, de reemplazo y de renovación
+    y revisa evidencia diferente para cada una. Una renovación presentada como "inicial"
+    puede tratarse como solicitud nueva y perder la extensión automática.
+  full_name: >
+    El nombre se compara con su expediente A, su pasaporte y registros previos de USCIS.
+    Una discrepancia (falta el segundo nombre, otro orden) es causa frecuente de RFE y
+    retrasa la producción de la tarjeta.
+  other_names: >
+    Las verificaciones de antecedentes se hacen con cada nombre que ha usado. Omitir uno es
+    un riesgo de tergiversación bajo INA §212(a)(6)(C) si aparece después.
+  mailing_address: >
+    La tarjeta EAD se envía a esta dirección. Una tarjeta no entregada vuelve a USCIS y
+    puede tardar meses en reemitirse.
+  mailing_same_as_physical: "USCIS necesita su residencia física para jurisdicción y verificaciones de antecedentes aunque el correo vaya a otro lugar."
+  physical_address: "Obligatoria siempre que la dirección postal sea un apartado postal, la oficina de un abogado o la casa de un amigo."
+  a_number: >
+    El A-Number vincula esta solicitud con su expediente migratorio existente. Dejarlo en
+    blanco cuando existe crea un expediente duplicado y retrasa la adjudicación.
+  uscis_online_account: "Vincula la presentación en papel con su cuenta en línea para que pueda darle seguimiento."
+  sex: "Se imprime en la EAD; debe coincidir con otros documentos de identidad para evitar una corrección de tarjeta."
+  marital_status: "Algunas categorías (p. ej., dependientes de titulares de visa) dependen de un matrimonio vigente."
+  prior_i765: "Indica a USCIS que busque su expediente anterior; responder 'No' cuando ya presentó antes se lee como una declaración falsa."
+  ssn: "Si ya tiene SSN, USCIS no pedirá a la SSA que emita otro; un número incorrecto crea una discrepancia en la SSA."
+  ssn_apply: >
+    USCIS comparte sus datos con la SSA para que no tenga que ir por separado. Responder "No"
+    significa una visita posterior a una oficina de la SSA.
+  citizenship_countries: "Determina qué sistemas consulares y de antecedentes se consultan y si aplican categorías de TPS o parole."
+  place_of_birth: "Verificación de identidad en los sistemas de USCIS, el Departamento de Estado y el FBI."
+  dob: "Verificación de identidad en todos los sistemas de USCIS y en la revisión de nombre del FBI."
+  i94_number: "Confirma la entrada legal y el estatus actual; para muchas categorías el I-94 es la prueba principal de estatus."
+  passport: "Prueba de identidad y nacionalidad; un pasaporte vencido no causa rechazo, pero un número faltante suele generar un RFE."
+  last_entry_date: "Inicia el conteo de su periodo de estadía actual y de las reglas de presencia continua para algunas categorías."
+  last_entry_place: "Permite a USCIS localizar su registro de llegada de CBP."
+  status_at_entry: "Establece cómo entró; algunas categorías requieren admisión legal o parole."
+  current_status: "Debe ser coherente con la categoría de elegibilidad que declara en el punto 27."
+  category: >
+    La categoría decide la tarifa, si aplica una tarifa adicional de la Ley Pública 119-21,
+    la dirección de envío y qué evidencia se requiere. Es el campo más importante del formulario.
+  c8_arrested: >
+    Los solicitantes de EAD por asilo deben declarar arrestos; si la respuesta es sí, se
+    requieren disposiciones judiciales certificadas. Decir que no cuando existen registros
+    es causa de denegación.
+  read_language: "Si lo ayudó un intérprete, este debe completar y firmar la Parte 4; de lo contrario USCIS puede cuestionar si entendió lo que firmó."
+  interpreter_language: "Se registra para que USCIS ofrezca el mismo idioma en cualquier entrevista."
+  used_preparer: "Si es así, el preparador debe completar la Parte 5. Los preparadores pagados no declarados son un indicador de fraude."
+  daytime_phone: "USCIS llama a este número para cambios de cita y para resolver deficiencias simples."
+  mobile_phone: "Se usa para notificaciones por texto si también presenta el Formulario G-1145."
+  email: "Se usa para avisos de la cuenta; una dirección mal escrita significa perder alertas de RFE."
+  signature_type: >
+    Desde el 10 de julio de 2026, USCIS puede denegar una presentación ya aceptada si la
+    firma resulta escrita a máquina, sellada, generada por software o hecha por una persona
+    no autorizada, con pérdida de la tarifa. El propio PDF dice que "no puede firmarse
+    electrónicamente". Firme con tinta después de imprimir.
+  filing_online: "Presentar en línea cuesta $50 menos y evita rechazos del lockbox; algunas categorías no pueden presentarse en línea."
+  fee_paid: "USCIS rechaza cualquier paquete con la tarifa incorrecta; el monto se verifica en vivo contra el G-1055 vigente."
+  i485_pending_filed_after_2024_04_01: "Esos solicitantes pagan una tarifa reducida de $260 por el I-765; pagar el precio completo no se reembolsa automáticamente."
+  pl119_21_fee_paid_separately: "Para su categoría, USCIS exige esta tarifa como pago independiente; un solo cheque combinado se rechaza."
+  court_dispositions_attached: "Obligatorio para solicitantes (c)(8) que respondieron sí al punto 30."
+  days_until_ead_expiry: "Las renovaciones presentadas con más de 180 días de anticipación se rechazan; presentar tarde arriesga un vacío en la autorización de empleo."
+risks:
+  renewal_window: "Las renovaciones no pueden presentarse antes de 180 días previos al vencimiento de la EAD actual."
+  replacement_uscis_error: "Si el error en la tarjeta fue de USCIS, no presente un nuevo I-765 ni pague tarifa; use el proceso de reemplazo por error de tarjeta."
+  name_mismatch: "El apellido no coincide con el pasaporte; indique la otra grafía en Otros nombres usados."
+  missing_a_number: "Ya presentó un I-765 antes, así que casi seguro tiene un A-Number; aparece en avisos anteriores de USCIS y en su EAD."
+  status_category_conflict: "Declara (c)(8) (asilo pendiente) pero su estatus actual no menciona una solicitud de asilo pendiente; asegúrese de que los puntos 25 y 27 cuenten la misma historia."
+  category_blank: "El punto 27 (categoría de elegibilidad) está en blanco; USCIS rechaza al recibirlo."
+  pl119_21_fee_combined: >
+    Esta categoría conlleva una tarifa adicional de la Ley Pública 119-21 que debe pagarse
+    como pago SEPARADO de la tarifa de presentación y no puede eximirse. Un solo cheque
+    combinado se rechaza. El monto depende de si es inicial o renovación; la fila del
+    G-1055 en vivo que muestra la aplicación es la autoritativa.
+  i485_pending_reduced_fee: "Con un I-485 presentado con tarifa el 1 de abril de 2024 o después y aún pendiente, la tarifa del I-765 es $260 (papel o en línea)."
+  c8_dispositions_missing: "Respondió sí al punto 30; adjunte disposiciones judiciales certificadas de cada arresto o el caso recibirá un RFE."
+  invalid_signature: "Solo se acepta una firma manuscrita con tinta. Las firmas a máquina, selladas o electrónicas pueden causar denegación y pérdida de la tarifa."
+  unsigned: "Los formularios sin firma se rechazan al recibirse."

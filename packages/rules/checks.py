@@ -101,6 +101,8 @@ def snapshot_checks(schema: FormSchema, answers: dict[str, Any], snap: RuleSnaps
                 id="edition.stale", severity="reject", source="snapshot",
                 text_en=(f"This packet uses edition {schema.pdf_edition}; uscis.gov currently accepts "
                          f"{snap.edition_dates.value} (checked {snap.fetched_at[:10]})."),
+                text_es=(f"Este paquete usa la edición {schema.pdf_edition}; uscis.gov acepta actualmente "
+                         f"{snap.edition_dates.value} (verificado {snap.fetched_at[:10]})."),
                 cite=[snap.edition_dates.source_url or ""],
             ))
         if snap.edition_alert.value and snap.edition_alert.value not in accepted:
@@ -108,6 +110,8 @@ def snapshot_checks(schema: FormSchema, answers: dict[str, Any], snap: RuleSnaps
                 id="edition.upcoming", severity="info", source="snapshot",
                 text_en=(f"USCIS announced a new edition dated {snap.edition_alert.value}. "
                          "Check the form page before mailing; old editions are usually accepted for a grace period."),
+                text_es=(f"USCIS anunció una nueva edición con fecha {snap.edition_alert.value}. "
+                         "Revise la página del formulario antes de enviar; las ediciones anteriores suelen aceptarse por un periodo de gracia."),
                 cite=[snap.edition_alert.source_url or ""],
             ))
     # Fee paid vs live schedule (general-filing row only; category exceptions are schema risks)
@@ -119,6 +123,8 @@ def snapshot_checks(schema: FormSchema, answers: dict[str, Any], snap: RuleSnaps
             id="fee.mismatch", severity="reject", source="snapshot",
             text_en=(f"Fee entered {paid} but the current G-1055 (ed. {snap.fee_schedule_edition}) lists "
                      f"{expected} for {'online' if online else 'paper'} filing. Wrong fee = rejection at intake."),
+            text_es=(f"Indicó una tarifa de {paid}, pero el G-1055 vigente (ed. {snap.fee_schedule_edition}) establece "
+                     f"{expected} para la presentación {'en línea' if online else 'en papel'}. Tarifa incorrecta = rechazo al recibirlo."),
             cite=[snap.fee_paper.source_url or ""],
         ))
     return out
