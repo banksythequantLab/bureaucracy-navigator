@@ -1,3 +1,15 @@
+---
+title: Bureaucracy Navigator
+emoji: 🧭
+colorFrom: blue
+colorTo: green
+sdk: docker
+app_port: 7860
+pinned: false
+license: apache-2.0
+short_description: USCIS forms explained, filled, checked — EN/ES, live rules
+---
+
 # Bureaucracy Navigator
 
 *Government forms, explained like a lawyer would — filled, checked, and tracked in your language.*

@@ -79,7 +79,7 @@ _Nebius x NVIDIA Global AI Hackathon · deadline Oct 30 2026 10:00 PDT · Notion
 
 ## Next (Week 6)
 - [ ] Derek: review Spanish (packages/schemas/es/*.es.yaml, i-130.yaml, sentinel strings)
-- [x] hosted: https://navigator.banksyai.com (Vesper: uvicorn :8791 + cloudflared tunnel + daily sentinel, all as user scheduled tasks)
+- [x] hosted: https://navigator.banksyai.com → Render free web service (srv-dammju740ujc73bh5620, auto-deploys from main; Cloudflare DNS-only CNAME). Sentinel runner not scheduled on the free tier.
 - [ ] Record the video per docs/video-script.md; submit on Devpost (deadline Oct 30 10:00 PDT)
 - [ ] Optional polish: N-400 remaining parts; Nemotron phrasing QA in Spanish
 - [ ] Re-run inspector when the 09/15/26 I-765 edition posts; diff field names
