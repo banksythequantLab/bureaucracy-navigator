@@ -1,6 +1,6 @@
 {
   "form": "i-130",
-  "fetched_at": "2026-09-17T14:49:45.658503+00:00",
+  "fetched_at": "2026-10-14T16:02:09.792412+00:00",
   "edition_dates": {
     "value": "04/01/24",
     "source_url": "https://www.uscis.gov/i-130",
@@ -11,7 +11,14 @@
     "source_url": null,
     "excerpt": null
   },
-  "fee_schedule_edition": "09/09/26",
+  "cutover_old_edition": null,
+  "cutover_new_edition": null,
+  "cutover_effective": null,
+  "cutover_excerpt": null,
+  "accepted_editions": [],
+  "not_accepted_editions": [],
+  "edition_override_excerpt": null,
+  "fee_schedule_edition": "10/01/26",
   "fee_table_excerpt": "I-130 Petition for Alien Relative (uscis.gov/i-130) General filing Paper Filing: $675 Online Filing: $625 ",
   "fee_paper": {
     "value": "$675",

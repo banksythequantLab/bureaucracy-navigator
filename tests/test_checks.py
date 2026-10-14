@@ -9,7 +9,7 @@ ANSWERS = json.loads(Path("tests/fixtures/i765_answers.json").read_text())
 SCHEMA = load_schema("i-765")
 
 
-def snap(edition="09/15/26", alert=None, paper="$520", online="$470"):
+def snap(edition="08/21/25", alert=None, paper="$520", online="$470"):
     return RuleSnapshot(
         form="i-765", fetched_at="2026-09-16T00:00:00+00:00",
         edition_dates=Sourced(value=edition, source_url="https://www.uscis.gov/i-765"),
@@ -31,7 +31,7 @@ def test_seeded_bad_packet_findings():
     assert ids["invalid_signature"].severity == "deny"        # typed signature
     assert ids["pl119_21_fee_combined"].severity == "reject"  # (c)(8) fee not separate
     assert "edition.stale" not in ids and "edition.upcoming" not in ids
-    ids2 = {f.id: f for f in run_checks(SCHEMA, ANSWERS, snap(edition="09/15/26", alert="10/01/26"))}
+    ids2 = {f.id: f for f in run_checks(SCHEMA, ANSWERS, snap(edition="08/21/25", alert="10/01/26"))}
     assert ids2["edition.upcoming"].severity == "info"
     assert "renewal_window" not in ids                         # 40 days < 180
     assert "fee.mismatch" not in ids                           # $520 paper matches
@@ -45,7 +45,7 @@ def test_clean_packet_has_no_hard_findings():
 
 def test_snapshot_edition_and_fee_drift():
     a = dict(ANSWERS, fee_paid="$410")
-    ids = {f.id for f in run_checks(SCHEMA, a, snap(edition="08/21/25"))}
+    ids = {f.id for f in run_checks(SCHEMA, a, snap(edition="09/15/26"))}
     assert {"edition.stale", "fee.mismatch"} <= ids
 
 
@@ -62,9 +62,35 @@ def test_cutover_hard_reject_after_effective_date():
 
     sn = snap(edition="08/21/25", alert="09/15/26")
     sn.cutover_old_edition, sn.cutover_new_edition, sn.cutover_effective = "08/21/25", "09/15/26", "2026-09-15"
-    old = load_schema("i-765").model_copy(update={"pdf_edition": "08/21/25"})
+    old = load_schema("i-765")  # 08/21/25
     ids = {f.id: f.severity for f in snapshot_checks(old, ANSWERS, sn, today=date(2026, 9, 17))}
     assert ids.get("edition.cutover") == "reject" and "edition.stale" not in ids
-    new = load_schema("i-765")  # now 09/15/26
+    new = load_schema("i-765").model_copy(update={"pdf_edition": "09/15/26"})
     assert "edition.cutover" not in {f.id for f in snapshot_checks(new, ANSWERS, sn, today=date(2026, 9, 17))}
     assert {f.id for f in snapshot_checks(new, ANSWERS, sn, today=date(2026, 9, 1))} >= {"edition.too_early"}
+
+
+def test_court_order_override_beats_cutover_and_edition_cells():
+    """Oct 2026: a D. Mass. order suspended the 09/15/26 I-765 edition; uscis.gov says it is
+    'not accepting' it and 'continues to accept' 08/21/25. The filler must track that."""
+    from datetime import date
+
+    from packages.rules.checks import snapshot_checks
+    from packages.rules.snapshot import parse_edition_dates, parse_edition_override
+
+    page = ("# I-765, Application for Employment Authorization\n\n**ALERT**: On Sept.14, 2026, the U.S. District Court ... "
+            "Pursuant to the Sept. 14, 2026, order, USCIS continues to accept the 08/28/24 edition of Form I-539 and "
+            "08/21/25 edition of Form I-765 and is not accepting the 09/15/26 edition of Forms I-539 and I-765.\n\n"
+            "## Form Details\n\n08/21/25. You can find the edition date at the bottom of the page on the form and instructions.\n")
+    assert parse_edition_dates(page)[0] == "08/21/25"           # new 'Form Details' layout, no 'Edition Date' label
+    ov = parse_edition_override(page, "i-765")
+    assert ov["accepted"] == ["08/21/25"] and ov["not_accepted"] == ["09/15/26"]
+    assert parse_edition_override(page, "n-400") is None        # sentence names other forms only
+
+    sn = snap(edition="08/21/25")
+    sn.accepted_editions, sn.not_accepted_editions = ["08/21/25"], ["09/15/26"]
+    wrong = load_schema("i-765").model_copy(update={"pdf_edition": "09/15/26"})
+    ids = {f.id: f.severity for f in snapshot_checks(wrong, ANSWERS, sn, today=date(2026, 10, 14))}
+    assert ids.get("edition.not_accepted") == "reject"
+    right = load_schema("i-765")                                 # ships 08/21/25 again
+    assert not [f for f in snapshot_checks(right, ANSWERS, sn, today=date(2026, 10, 14)) if f.id.startswith("edition.")]

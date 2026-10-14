@@ -8,7 +8,7 @@ from packages.forms.fill import fill_pdf, read_back
 from packages.forms.maps.i_765 import NEVER_FILL, map_answers
 
 ANSWERS = json.loads(Path("tests/fixtures/i765_answers.json").read_text())
-PDF = Path("packages/forms/pdf/i-765.pdf")
+PDF = Path("packages/forms/pdf/i-765-2025-08-21.pdf")
 
 
 def test_map_never_touches_signature():

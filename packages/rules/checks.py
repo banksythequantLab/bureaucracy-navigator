@@ -96,6 +96,18 @@ def snapshot_checks(schema: FormSchema, answers: dict[str, Any], snap: RuleSnaps
 
     today = today or _date.today()
     out: list[Finding] = []
+    # Court-order override beats everything: an edition USCIS says it is "not accepting" is a hard reject,
+    # whatever the cutover or edition-date cells say.
+    if schema.pdf_edition and schema.pdf_edition in snap.not_accepted_editions:
+        acc = ", ".join(snap.accepted_editions) or "the previous"
+        out.append(Finding(
+            id="edition.not_accepted", severity="reject", source="snapshot",
+            text_en=(f"USCIS is NOT accepting the {schema.pdf_edition} edition (court order noted on uscis.gov, "
+                     f"checked {snap.fetched_at[:10]}); it continues to accept {acc}. Re-print on the accepted edition."),
+            text_es=(f"USCIS NO acepta la edición {schema.pdf_edition} (orden judicial indicada en uscis.gov, "
+                     f"verificado {snap.fetched_at[:10]}); sigue aceptando {acc}. Vuelva a imprimir en la edición aceptada."),
+            cite=[snap.edition_dates.source_url or ""],
+        ))
     # No-grace-period cutover: after the effective date the old edition is rejected outright,
     # and before it the NEW edition is rejected — both are hard rejects, not heads-ups.
     if snap.cutover_effective and schema.pdf_edition:
@@ -119,7 +131,7 @@ def snapshot_checks(schema: FormSchema, answers: dict[str, Any], snap: RuleSnaps
     # Edition drift: the PDF we fill vs what uscis.gov accepts today
     if schema.pdf_edition and snap.edition_dates.value and not snap.cutover_effective:
         accepted = [d.strip() for d in snap.edition_dates.value.split(",")]
-        if schema.pdf_edition not in accepted:
+        if schema.pdf_edition not in accepted and schema.pdf_edition not in snap.accepted_editions:
             out.append(Finding(
                 id="edition.stale", severity="reject", source="snapshot",
                 text_en=(f"This packet uses edition {schema.pdf_edition}; uscis.gov currently accepts "

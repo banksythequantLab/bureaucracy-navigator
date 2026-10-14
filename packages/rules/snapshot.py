@@ -60,6 +60,11 @@ class RuleSnapshot(BaseModel):
     cutover_new_edition: Optional[str] = None
     cutover_effective: Optional[str] = None  # ISO date
     cutover_excerpt: Optional[str] = None
+    # Court-order / litigation override: "USCIS continues to accept the <old> edition ... and is not
+    # accepting the <new> edition" (e.g. the Sept. 14, 2026 D. Mass. order on I-765 / I-539)
+    accepted_editions: list[str] = Field(default_factory=list)
+    not_accepted_editions: list[str] = Field(default_factory=list)
+    edition_override_excerpt: Optional[str] = None
     fee_schedule_edition: Optional[str] = None
     fee_table_excerpt: Optional[str] = None  # full G-1055 row(s) for the adjudicator
     fee_paper: Sourced = Field(default_factory=Sourced)
@@ -124,6 +129,10 @@ def parse_edition_dates(md: str) -> Optional[tuple[str, str]]:
     # Case-sensitive: the section label is "Edition Date"; alert banners say
     # "(edition date: mm/dd/yy)" and are handled by parse_edition_alert.
     m = _find(r"\bEdition Date\b.{0,300}", md, flags=re.S)
+    if not m:  # Oct 2026 layout: a "Form Details" heading, then "<date>. You can find the edition date ..."
+        m = _find(r"Form Details\s*\n+\s*" + _DATE_STRICT + r"[^\n]{0,200}", md, flags=re.S)
+    if not m:  # last resort: the sentence itself
+        m = _find(_DATE_STRICT + r"\.\s*You can find the edition date[^\n]{0,200}", md, flags=re.S)
     if not m:
         return None
     chunk = m.group(0)
@@ -175,6 +184,37 @@ def parse_cutover(md: str) -> Optional[dict[str, str]]:
         new = m2.group(1)
     s0 = max(0, m.start() - 120)
     return {"old": old, "new": new or "", "effective": eff, "excerpt": md[s0 : m.end() + 160]}
+
+
+_FORM_TOKEN = r"(?:Forms?\s+)?([A-Z]{1,2}-\d{3}[A-Z]?)"
+
+
+def parse_edition_override(md: str, form: str) -> Optional[dict]:
+    """Detect litigation language that overrides the normal edition rule, e.g.
+
+      "Pursuant to the Sept. 14, 2026, order, USCIS continues to accept the 08/28/24 edition of
+       Form I-539 and 08/21/25 edition of Form I-765 and is not accepting the 09/15/26 edition of
+       Forms I-539 and I-765."
+
+    Returns {accepted: [..], not_accepted: [..], excerpt} for THIS form, or None.
+    """
+    form_u = form.upper()
+    m = re.search(r"[^.\n]*\bnot accepting the\s+" + _DATE_STRICT + r"\s+edition[^.\n]*\.", md)
+    if not m:
+        return None
+    sent = m.group(0)
+    if form_u not in sent.upper():
+        return None
+    # not-accepted part: "... not accepting the <d> edition of Forms I-539 and I-765."
+    na = re.search(r"not accepting the\s+" + _DATE_STRICT + r"\s+edition", sent)
+    not_accepted = [na.group(1)] if na else []
+    # accepted parts: "<d> edition of Form <X>" pairs before the not-accepting clause; keep the one for this form
+    accepted = [d for d, f in re.findall(_DATE_STRICT + r"\s+edition of\s+" + _FORM_TOKEN, sent[: na.start() if na else len(sent)])
+                if f.upper() == form_u]
+    if not accepted and not not_accepted:
+        return None
+    s0 = max(0, m.start() - 400)
+    return {"accepted": accepted, "not_accepted": not_accepted, "excerpt": md[s0 : m.end()]}
 
 
 def parse_fee_row(g1055_md: str, form_title: str) -> dict[str, str]:
@@ -301,6 +341,13 @@ def _build_live(form: str) -> RuleSnapshot:
         if cut:
             snap.cutover_old_edition, snap.cutover_new_edition = cut["old"], cut["new"] or None
             snap.cutover_effective, snap.cutover_excerpt = cut["effective"], cut["excerpt"]
+        ov = parse_edition_override(form_md, form)
+        if ov:
+            snap.accepted_editions, snap.not_accepted_editions = ov["accepted"], ov["not_accepted"]
+            snap.edition_override_excerpt = ov["excerpt"]
+            if snap.cutover_new_edition in ov["not_accepted"]:  # the cutover was itself overridden
+                snap.warnings.append(f"Edition cutover to {snap.cutover_new_edition} is suspended by court order; ignoring it.")
+                snap.cutover_old_edition = snap.cutover_new_edition = snap.cutover_effective = snap.cutover_excerpt = None
         snap.where_to_file_url = parse_where_to_file(form_md)
         if not snap.where_to_file_url:
             snap.warnings.append("Where-to-file link not found on form page")
